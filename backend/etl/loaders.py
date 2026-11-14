@@ -16,6 +16,7 @@ import pandas as pd
 from .normalize import (
     clean,
     norm_province,
+    norm_school,
     region_of,
     safe_key,
     split_list,
@@ -157,6 +158,9 @@ def load_crm(booklet2: Path, roi: Path, raw: dict[str, list[dict]]) -> dict[str,
         payment = clean(r.get("Trạng thái thanh toán"))
         payment = PAYMENT_LABELS.get(payment, payment)
         venue = venues.get(cid, {})
+        school_info = norm_school(r.get("Trường (chuẩn hoá)"))
+        is_paid_monetary = payment == "Đã thanh toán"
+        is_registered_valid = payment in ("Đã thanh toán", "Miễn phí")
         doc = {
             "_id": cid,
             "contact_id": cid,
@@ -166,10 +170,14 @@ def load_crm(booklet2: Path, roi: Path, raw: dict[str, list[dict]]) -> dict[str,
             "board": r.get("Bảng"),
             "province": province,
             "region": region_of(province),
-            "school": r.get("Trường (chuẩn hoá)"),
+            "school": school_info["school"],
+            "school_type": school_info["school_type"],
+            "school_id": school_info["school_id"],
             "web_registered": yes(r.get("Đăng ký web")),
             "payment_status": payment,
-            "paid": payment in ("Đã thanh toán", "Miễn phí"),
+            "paid": is_paid_monetary,
+            "is_paid_monetary": is_paid_monetary,
+            "is_registered_valid": is_registered_valid,
             "fee": to_float(r.get("Lệ phí (VND)")),
             "revenue": to_float(attr.get("Lệ phí ghi nhận (VND)")) or 0.0,
             "has_external": yes(r.get("Có tương tác Talkshow/FB")),
@@ -506,6 +514,8 @@ def load_exams(files: dict[str, Path], meta: dict, contact_tags: dict[str, list[
             board = r.get("Bảng")
             province = norm_province(r.get("Tỉnh/TP"))
             school = r.get("Trường")
+            school_info = norm_school(school)
+            is_cand_paid = yes(r.get("Đã thanh toán"))
             cand = {
                 "_id": f"{ds['code']}:{stt:03d}",
                 "dataset": ds["code"],
@@ -514,11 +524,14 @@ def load_exams(files: dict[str, Path], meta: dict, contact_tags: dict[str, list[
                 "email": r.get("Email"),
                 "full_name": r.get("Họ tên"),
                 "board": board,
-                "school": school,
-                "school_type": "THPT" if str(school or "").startswith("THPT") else "Đại học / Học viện",
+                "school": school_info["school"],
+                "school_type": school_info["school_type"],
+                "school_id": school_info["school_id"],
                 "province": province,
                 "region": region_of(province),
-                "paid": yes(r.get("Đã thanh toán")),
+                "paid": is_cand_paid,
+                "is_paid_monetary": is_cand_paid,
+                "is_registered_valid": is_cand_paid,
                 "simulated": True,
             }
             for rnd in ("qualifier", "final"):

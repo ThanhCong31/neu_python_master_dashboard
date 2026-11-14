@@ -15,6 +15,7 @@ type AuditRow = { at: string; action: string; username: string | null; ok: boole
 const ACTION_LABEL: Record<string, string> = {
   login: "Đăng nhập", change_password: "Đổi mật khẩu", user_create: "Tạo tài khoản", user_update: "Sửa tài khoản",
   user_reset_password: "Đặt lại mật khẩu", partner_update: "Sửa quyền đối tác",
+  data_reload: "Nạp lại dữ liệu", data_upload: "Tải lên file Excel",
 };
 
 function CreateUser({ partners, onDone, onClose }: { partners: PartnerRow[]; onDone: () => void; onClose: () => void }) {
@@ -138,9 +139,159 @@ function PartnerCard({ p, modules, onSaved }: { p: PartnerRow; modules: Record<s
   );
 }
 
+type DataStatus = {
+  contacts: number;
+  signups: number;
+  leads: number;
+  exam_candidates: number;
+  exam_scores: number;
+};
+
+function DataManagement() {
+  const statusApi = useApi<DataStatus>("/admin/data-status");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; warn?: boolean } | null>(null);
+  const [targetName, setTargetName] = useState<string>("Demo_Data_khách_hàng.xlsx");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const reloadData = async () => {
+    setLoading(true);
+    setMsg(null);
+    try {
+      const res = await api<{ ok: boolean; message: string; counts: Record<string, number> }>("/admin/reload-data", {
+        method: "POST",
+      });
+      setMsg({ text: `${res.message} (Contacts: ${res.counts.contacts}, Leads: ${res.counts.leads}, Thí sinh: ${res.counts.candidates})` });
+      statusApi.reload();
+    } catch (err) {
+      setMsg({ text: (err as Error).message, warn: true });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadFile = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile) return;
+    setLoading(true);
+    setMsg(null);
+    try {
+      const buffer = await selectedFile.arrayBuffer();
+      const res = await api<{ ok: boolean; message: string; counts: Record<string, number> }>(
+        `/admin/upload-file?filename=${encodeURIComponent(targetName)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/octet-stream" },
+          body: buffer,
+        }
+      );
+      setMsg({ text: `${res.message} (Contacts: ${res.counts.contacts}, Leads: ${res.counts.leads}, Thí sinh: ${res.counts.candidates})` });
+      setSelectedFile(null);
+      statusApi.reload();
+    } catch (err) {
+      setMsg({ text: (err as Error).message, warn: true });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const d = statusApi.data;
+
+  return (
+    <div className="stack" style={{ gap: 20 }}>
+      <Note>
+        Tính năng này cho phép Quản trị viên cập nhật hoặc tải file Excel dữ liệu mới trực tiếp lên máy chủ mà không cần thao tác qua dòng lệnh Terminal. Hệ thống sẽ tự động làm sạch, chuẩn hóa và đối soát CSDL ngay lập tức.
+      </Note>
+
+      {msg && <Note warn={msg.warn}>{msg.text}</Note>}
+
+      <section className="card">
+        <div className="card-head">
+          <div>
+            <h2>Trạng thái dữ liệu trong CSDL MongoDB</h2>
+            <div className="sub">Số lượng bản ghi hiện có trong hệ thống</div>
+          </div>
+          <div className="actions">
+            <button className="btn primary sm" onClick={reloadData} disabled={loading}>
+              {loading ? "Đang xử lý…" : "🔄 Nạp lại & làm sạch CSDL"}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid" style={{ gap: 12, padding: "12px 0" }}>
+          <div className="card col-2" style={{ padding: 14 }}>
+            <div className="sub">Hồ sơ CRM (Contacts)</div>
+            <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{fmtInt(d?.contacts)}</div>
+          </div>
+          <div className="card col-2" style={{ padding: 14 }}>
+            <div className="sub">Đăng ký Web (Signups)</div>
+            <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{fmtInt(d?.signups)}</div>
+          </div>
+          <div className="card col-2" style={{ padding: 14 }}>
+            <div className="sub">Lead Talkshow & FB</div>
+            <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{fmtInt(d?.leads)}</div>
+          </div>
+          <div className="card col-3" style={{ padding: 14 }}>
+            <div className="sub">Thí sinh thi (Candidates)</div>
+            <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{fmtInt(d?.exam_candidates)}</div>
+          </div>
+          <div className="card col-3" style={{ padding: 14 }}>
+            <div className="sub">Đầu điểm thi (Scores)</div>
+            <div style={{ fontSize: 24, fontWeight: 700, marginTop: 4 }}>{fmtInt(d?.exam_scores)}</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="card">
+        <div className="card-head">
+          <div>
+            <h2>Tải lên file Excel mới</h2>
+            <div className="sub">Chọn file từ máy tính để cập nhật trực tiếp vào hệ thống</div>
+          </div>
+        </div>
+
+        <form onSubmit={uploadFile} className="stack" style={{ gap: 14, maxWidth: 650, padding: "8px 0" }}>
+          <label className="field">
+            <span>Loại file dữ liệu cần cập nhật</span>
+            <select
+              className="select"
+              value={targetName}
+              onChange={(e) => setTargetName(e.target.value)}
+            >
+              <option value="Demo_Data_khách_hàng.xlsx">
+                Dữ liệu khách hàng (Đăng ký web, Webinar Google, Facebook Ads)
+              </option>
+              <option value="Điểm giả lập.xlsx">
+                Dữ liệu điểm thi (Điểm thi thí sinh, Vòng loại & Chung kết)
+              </option>
+            </select>
+          </label>
+
+          <label className="field">
+            <span>Chọn file Excel (.xlsx) từ máy tính</span>
+            <input
+              className="input"
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+              required
+            />
+          </label>
+
+          <div className="row" style={{ gap: 8, marginTop: 4 }}>
+            <button className="btn primary" type="submit" disabled={loading || !selectedFile}>
+              {loading ? "Đang tải lên & nạp CSDL…" : "⬆ Tải lên & Cập nhật CSDL"}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
+}
+
 export default function Admin() {
   const { user } = useAuth();
-  const [tab, setTab] = useState<"users" | "partners" | "audit">("users");
+  const [tab, setTab] = useState<"users" | "partners" | "audit" | "data">("users");
   const [creating, setCreating] = useState(false);
   const [resetting, setResetting] = useState<string | null>(null);
   const users = useApi<UserRow[]>("/admin/users");
@@ -164,6 +315,7 @@ export default function Admin() {
       <div className="tabs" role="tablist">
         <button className={tab === "users" ? "on" : ""} onClick={() => setTab("users")}>Tài khoản</button>
         <button className={tab === "partners" ? "on" : ""} onClick={() => setTab("partners")}>Đối tác & phân quyền</button>
+        <button className={tab === "data" ? "on" : ""} onClick={() => setTab("data")}>Nạp & Quản lý dữ liệu</button>
         <button className={tab === "audit" ? "on" : ""} onClick={() => setTab("audit")}>Nhật ký truy cập</button>
       </div>
       {error && <Note warn>{error}</Note>}
@@ -208,6 +360,8 @@ export default function Admin() {
           </div>
         </>
       )}
+
+      {tab === "data" && <DataManagement />}
 
       {tab === "audit" && (
         <section className={`card${audit.loading ? " loading" : ""}`}>

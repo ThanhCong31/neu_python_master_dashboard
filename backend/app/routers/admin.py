@@ -1,7 +1,8 @@
+from pathlib import Path
 import re
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
@@ -154,3 +155,63 @@ def audit_log(limit: int = 100, _: CurrentUser = Depends(require_admin)):
 @router.get("/imports")
 def import_runs(_: CurrentUser = Depends(require_admin)):
     return list(get_db().import_runs.find({}, {"_id": 0}).sort("started_at", -1).limit(10))
+
+
+ROOT_DIR = Path(__file__).resolve().parents[3]
+
+
+@router.get("/data-status")
+def data_status(_: CurrentUser = Depends(require_admin)):
+    """Lấy số lượng bản ghi thực tế trong MongoDB."""
+    db = get_db()
+    return {
+        "contacts": db.contacts.count_documents({}),
+        "signups": db.signups.count_documents({}),
+        "leads": db.leads.count_documents({}),
+        "exam_candidates": db.exam_candidates.count_documents({}),
+        "exam_scores": db.exam_scores.count_documents({}),
+    }
+
+
+@router.post("/reload-data")
+def reload_data(request: Request, admin: CurrentUser = Depends(require_admin)):
+    """Kích hoạt chạy lại pipeline ETL làm sạch và nạp dữ liệu vào MongoDB ngay trên web."""
+    try:
+        from etl.process_and_seed import run as run_etl
+        result = run_etl()
+        audit("data_reload", admin.username, request, detail=result)
+        return {"ok": True, "message": "Nạp và làm sạch dữ liệu thành công!", "counts": result}
+    except Exception as e:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Lỗi nạp dữ liệu: {e}")
+
+
+@router.post("/upload-file")
+async def upload_file(
+    request: Request,
+    filename: str = Query(..., description="Tên file đích (VD: Demo_Data_khách_hàng.xlsx hoặc Điểm giả lập.xlsx)"),
+    admin: CurrentUser = Depends(require_admin),
+):
+    """Tải lên file Excel trực tiếp qua web và tự động nạp lại CSDL."""
+    body = await request.body()
+    if not body:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "File tải lên không có dữ liệu")
+    if not (filename.endswith(".xlsx") or filename.endswith(".xls") or filename.endswith(".csv")):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Chỉ chấp nhận file định dạng .xlsx, .xls hoặc .csv")
+
+    data_dir = ROOT_DIR / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    target_path = data_dir / filename
+    try:
+        with open(target_path, "wb") as f:
+            f.write(body)
+    except Exception as e:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Không thể lưu file: {e}")
+
+    try:
+        from etl.process_and_seed import run as run_etl
+        result = run_etl()
+        audit("data_upload", admin.username, request, detail={"filename": filename, **result})
+        return {"ok": True, "message": f"Đã tải lên {filename} và nạp CSDL thành công!", "counts": result}
+    except Exception as e:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Đã lưu file nhưng lỗi khi nạp CSDL: {e}")
+

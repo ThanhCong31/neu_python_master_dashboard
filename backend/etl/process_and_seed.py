@@ -21,7 +21,7 @@ from app.db import get_db
 from app.partners import DEFAULT_USERS, MODULES, PARTNERS
 from app.security import hash_password
 from etl.normalize import (
-    clean, norm_province, region_of, to_date_str, to_dt, to_float, to_int, to_phone, yes
+    clean, norm_province, norm_school, region_of, to_date_str, to_dt, to_float, to_int, to_phone, yes
 )
 from etl.tagging import channel_partners, contact_partners, exam_partners, lead_partners
 
@@ -258,16 +258,23 @@ def run():
         province = norm_province(r.get("pm-tinhthanh"))
         board = r.get("pm-bang")
         school = r.get("pm-truong")
+        school_info = norm_school(school)
         email = r.get("pm-email")
         name = r.get("pm-hoten")
         partner_tag = clean(r.get("partner"))
         
-        # Tags đối tác
+        # Tags đối tác (Hỗ trợ mở rộng theo đối tác cụ thể và nhóm)
         p_tags = []
+        school_lower = str(school or "").lower()
+        if "nguyễn huệ" in school_lower or "nguyen hue" in school_lower:
+            p_tags.append("NH")
+        if "kinh tế quốc dân" in school_lower or "neu" in school_lower:
+            p_tags.append("NEU")
         if board == "Bảng A":
             p_tags.append("THPT")
         if board == "Bảng B":
             p_tags.append("DH")
+            p_tags.append("NEU")
         if partner_tag:
             p_tags.append(str(partner_tag).upper())
         if province in ["TP. Hồ Chí Minh", "Bình Dương", "Đồng Nai", "Cần Thơ", "Lâm Đồng", "Khánh Hòa"]:
@@ -285,10 +292,14 @@ def run():
             "board": board,
             "province": province,
             "region": region_of(province),
-            "school": school,
+            "school": school_info["school"],
+            "school_type": school_info["school_type"],
+            "school_id": school_info["school_id"],
             "web_registered": True,
             "payment_status": "Đã thanh toán" if is_paid else "Chưa thanh toán",
             "paid": is_paid,
+            "is_paid_monetary": is_paid,
+            "is_registered_valid": is_paid,
             "fee": 500000.0,
             "revenue": 500000.0 if is_paid else 0.0,
             "has_external": False,
@@ -356,6 +367,7 @@ def run():
         vl_total = float(score_row["VL – Tổng (/1000)"])
         ck_total = float(score_row["CK – Tổng (/1000)"]) if pd.notna(score_row["CK – Tổng (/1000)"]) else None
         
+        cand_school_info = norm_school(school)
         cand_doc = {
             "_id": cand_id,
             "dataset": "PM119",
@@ -364,11 +376,14 @@ def run():
             "email": email,
             "full_name": name,
             "board": board,
-            "school": school,
-            "school_type": "THPT" if str(school).startswith("THPT") else "Đại học / Học viện",
+            "school": cand_school_info["school"],
+            "school_type": cand_school_info["school_type"],
+            "school_id": cand_school_info["school_id"],
             "province": province,
             "region": region_of(province),
             "paid": is_paid,
+            "is_paid_monetary": is_paid,
+            "is_registered_valid": is_paid,
             "simulated": True,
             "qualifier": {
                 "level": score_row.get("VL – Cấp COS Pro"),
@@ -423,11 +438,276 @@ def run():
             "partners": c_doc["partners"],
         })
 
+    # 3.5. Xử lý và làm sạch 59 Lead từ 2 form bên ngoài (Talkshow Google Form & FB Lead Form)
+    print("-> Đang làm sạch và phân tích 59 leads từ Talkshow & Facebook Ads...")
+    leads = []
+    contact_by_email = {c["email"].lower(): c for c in contacts if c.get("email")}
+    contact_by_phone = {c["phone"]: c for c in contacts if c.get("phone")}
+    seen_email = dict(contact_by_email)
+    seen_phone = dict(contact_by_phone)
+
+    # 3.5.1. Talkshow Google Form (28 dòng)
+    for idx, r in df_talkshow.iterrows():
+        row_no = idx + 2
+        name = clean(r.get("1. Họ và Tên"))
+        phone = to_phone(r.get("2. Số điện thoại"))
+        email = clean(r.get("3. Email"))
+        email_lower = email.lower() if email else None
+        heard_from = clean(r.get("5. Bạn biết về Talkshow qua đâu?"))
+        self_dec_raw = str(r.get("6. Bạn đã ghi danh đấu trường Python Master 2026 chưa?") or "")
+        self_declared = "Chưa đăng ký" if "chưa" in self_dec_raw.lower() else ("Đã đăng ký" if any(kw in self_dec_raw.lower() for kw in ("rồi", "đã", "có")) else "Chưa đăng ký")
+        
+        b_raw = str(r.get("7. Bạn đang quan tâm đến bảng đấu nào?") or "").lower()
+        board_interest = "Bảng A" if "bảng a" in b_raw else ("Bảng B" if "bảng b" in b_raw else "Bảng B")
+        
+        school_raw = clean(r.get("4. Trường đang theo học"))
+        school_info = norm_school(school_raw)
+        question = clean(r.get("8. Câu hỏi dành cho BTC"))
+        pic = clean(r.get("Link form: https://docs.google.com/forms/d/1GxVr7rGHSKuXOLFNQ4C1ICwapRT7TS8L1P6b-wNtRUk/edit")) or "Nhung"
+        created_at = to_dt(r.get("Timestamp")) or datetime(2026, 8, 26, 19, 0, tzinfo=timezone.utc)
+        province = school_info.get("province") or "Hà Nội"
+        region = school_info.get("region") or "Miền Bắc"
+
+        matched = (contact_by_email.get(email_lower) if email_lower else None) or (contact_by_phone.get(phone) if phone else None)
+        if matched:
+            result = "Đã có trong Data"
+            cid = matched["_id"]
+            matched["has_external"] = True
+            matched["talkshow_form"] = True
+            matched["wants_talkshow"] = True
+            if question and not matched.get("question"):
+                matched["question"] = question
+            if "Talkshow" not in matched.get("sources", []):
+                matched["sources"].append("Talkshow")
+                matched["source_combo"] = " + ".join(matched["sources"])
+        else:
+            prev = (seen_email.get(email_lower) if email_lower else None) or (seen_phone.get(phone) if phone else None)
+            if prev:
+                result = "Trùng trong form ngoài"
+                cid = prev["_id"]
+            else:
+                result = "Lead mới"
+                next_stt = len(contacts) + 1
+                cid = f"PT-{next_stt:03d}"
+                new_contact = {
+                    "_id": cid,
+                    "contact_id": cid,
+                    "full_name": name,
+                    "email": email,
+                    "phone": phone,
+                    "board": board_interest,
+                    "province": province,
+                    "region": region,
+                    "school": school_info["school"],
+                    "school_type": school_info["school_type"],
+                    "school_id": school_info["school_id"],
+                    "web_registered": False,
+                    "payment_status": "Chưa thanh toán",
+                    "paid": False,
+                    "is_paid_monetary": False,
+                    "is_registered_valid": False,
+                    "fee": 0.0,
+                    "revenue": 0.0,
+                    "has_external": True,
+                    "talkshow_form": True,
+                    "fb_form": False,
+                    "wants_talkshow": True,
+                    "question": question,
+                    "self_declared": self_declared,
+                    "merged_count": 1,
+                    "data_rows": 0,
+                    "sources": ["Talkshow"],
+                    "source_combo": "Talkshow",
+                    "first_touch": created_at,
+                    "web_registered_at": None,
+                    "segment": "Lead Talkshow mới",
+                    "segment_name": "Nhóm tiềm năng",
+                    "sub_segment": board_interest,
+                    "drip": "Drip-Talkshow",
+                    "flags": [],
+                    "pic": pic,
+                    "notes": None,
+                    "utm_partners": ["info"],
+                    "promo_codes": [],
+                    "dob": None,
+                    "cccd": None,
+                    "channel_base": "Đối tác trường",
+                    "channel": "Đối tác trường",
+                    "channel_is_assumed": False,
+                    "exam_venue": "Hà Nội" if region == "Miền Bắc" else "TP.HCM",
+                    "exam_venue_address": "Cơ sở PTIT",
+                    "partners": contact_partners({"school": school_info["school"], "board": board_interest, "region": region, "channel_base": "Đối tác trường", "utm_partners": ["info"]})
+                }
+                contacts.append(new_contact)
+                if email_lower: seen_email[email_lower] = new_contact
+                if phone: seen_phone[phone] = new_contact
+
+        lead_doc = {
+            "source": "Talkshow Google Form",
+            "row_no": row_no,
+            "contact_id": cid,
+            "result": result,
+            "segment": "Nhóm hoàn tất" if matched and matched.get("paid") else "Nhóm tiềm năng",
+            "created_at": created_at,
+            "full_name": name,
+            "full_name_raw": name,
+            "email": email,
+            "email_raw": email,
+            "phone": phone,
+            "phone_raw": clean(r.get("2. Số điện thoại")),
+            "board_interest": board_interest,
+            "province": province,
+            "region": region,
+            "school_raw": school_raw,
+            "wants_talkshow": True,
+            "self_declared": self_declared,
+            "question": question,
+            "pic": pic,
+            "note": None,
+            "campaign": None,
+            "heard_from": heard_from,
+            "platform": None,
+            "ad_name": None,
+            "adset_name": None,
+        }
+        lead_doc["partners"] = lead_partners(lead_doc, matched["partners"] if matched else ["INFO", "THPT" if board_interest == "Bảng A" else "DH"])
+        leads.append(lead_doc)
+
+    # 3.5.2. Facebook Ads Lead Form (31 dòng)
+    for idx, r in df_fb.iterrows():
+        row_no = idx + 2
+        name = clean(r.get("tên_đầy_đủ"))
+        phone = to_phone(r.get("số_điện_thoại"))
+        email = clean(r.get("email"))
+        email_lower = email.lower() if email else None
+        campaign = clean(r.get("campaign_name"))
+        ad_name = clean(r.get("ad_name"))
+        adset_name = clean(r.get("adset_name"))
+        platform_raw = clean(r.get("platform"))
+        platform = "Facebook" if platform_raw == "fb" else ("Instagram" if platform_raw == "ig" else "Facebook")
+        
+        b_raw = str(r.get("bạn_đang_cần_thông_tin_cho_bảng_thi_nào?") or "").lower()
+        board_interest = "Bảng A" if "bảng_a" in b_raw else ("Bảng B" if "bảng_b" in b_raw else "Bảng B")
+        
+        wt_raw = str(r.get("bạn_có_muốn_tham_gia_các_talkshow_hàng_tuần_để_hiểu_thêm_chương_trình?") or "").lower()
+        wants_talkshow = "không" not in wt_raw
+        
+        province = norm_province(clean(r.get("bạn_đang_ở_khu_vực_nào?"))) or "TP. Hồ Chí Minh"
+        region = region_of(province)
+        pic = clean(r.get("col20")) or "Thắng"
+        note = clean(r.get("col22"))
+        created_at = to_dt(r.get("created_time")) or datetime(2026, 8, 15, 12, 0, tzinfo=timezone.utc)
+
+        matched = (contact_by_email.get(email_lower) if email_lower else None) or (contact_by_phone.get(phone) if phone else None)
+        if matched:
+            result = "Đã có trong Data"
+            cid = matched["_id"]
+            matched["has_external"] = True
+            matched["fb_form"] = True
+            if wants_talkshow: matched["wants_talkshow"] = True
+            if "FB Lead Form" not in matched.get("sources", []):
+                matched["sources"].append("FB Lead Form")
+                matched["source_combo"] = " + ".join(matched["sources"])
+        else:
+            prev = (seen_email.get(email_lower) if email_lower else None) or (seen_phone.get(phone) if phone else None)
+            if prev:
+                result = "Trùng trong form ngoài"
+                cid = prev["_id"]
+            else:
+                result = "Lead mới"
+                next_stt = len(contacts) + 1
+                cid = f"PT-{next_stt:03d}"
+                new_contact = {
+                    "_id": cid,
+                    "contact_id": cid,
+                    "full_name": name,
+                    "email": email,
+                    "phone": phone,
+                    "board": board_interest,
+                    "province": province,
+                    "region": region,
+                    "school": None,
+                    "school_type": "Chưa rõ",
+                    "school_id": None,
+                    "web_registered": False,
+                    "payment_status": "Chưa thanh toán",
+                    "paid": False,
+                    "is_paid_monetary": False,
+                    "is_registered_valid": False,
+                    "fee": 0.0,
+                    "revenue": 0.0,
+                    "has_external": True,
+                    "talkshow_form": False,
+                    "fb_form": True,
+                    "wants_talkshow": wants_talkshow,
+                    "question": None,
+                    "self_declared": "Chưa đăng ký",
+                    "merged_count": 1,
+                    "data_rows": 0,
+                    "sources": ["FB Lead Form"],
+                    "source_combo": "FB Lead Form",
+                    "first_touch": created_at,
+                    "web_registered_at": None,
+                    "segment": "Lead Facebook mới",
+                    "segment_name": "Nhóm tiềm năng",
+                    "sub_segment": board_interest,
+                    "drip": "Drip-FB",
+                    "flags": [],
+                    "pic": pic,
+                    "notes": note,
+                    "utm_partners": ["metaads"],
+                    "promo_codes": [],
+                    "dob": None,
+                    "cccd": None,
+                    "channel_base": "Facebook",
+                    "channel": "Facebook",
+                    "channel_is_assumed": False,
+                    "exam_venue": "Hà Nội" if region == "Miền Bắc" else "TP.HCM",
+                    "exam_venue_address": "Cơ sở PTIT",
+                    "partners": contact_partners({"board": board_interest, "region": region, "channel_base": "Facebook", "utm_partners": ["metaads"]})
+                }
+                contacts.append(new_contact)
+                if email_lower: seen_email[email_lower] = new_contact
+                if phone: seen_phone[phone] = new_contact
+
+        lead_doc = {
+            "source": "FB Lead Form",
+            "row_no": row_no,
+            "contact_id": cid,
+            "result": result,
+            "segment": "Nhóm hoàn tất" if matched and matched.get("paid") else "Nhóm tiềm năng",
+            "created_at": created_at,
+            "full_name": name,
+            "full_name_raw": name,
+            "email": email,
+            "email_raw": email,
+            "phone": phone,
+            "phone_raw": clean(r.get("số_điện_thoại")),
+            "board_interest": board_interest,
+            "province": province,
+            "region": region,
+            "school_raw": None,
+            "wants_talkshow": wants_talkshow,
+            "self_declared": "Chưa đăng ký",
+            "question": None,
+            "pic": pic,
+            "note": note,
+            "campaign": campaign,
+            "heard_from": None,
+            "platform": platform,
+            "ad_name": ad_name,
+            "adset_name": adset_name,
+        }
+        lead_doc["partners"] = lead_partners(lead_doc, matched["partners"] if matched else ["METAADS", "THPT" if board_interest == "Bảng A" else "DH"])
+        leads.append(lead_doc)
+
     # 4. Ghi vào MongoDB
     print(f"-> Đang nạp {len(contacts)} contacts...")
     db.contacts.insert_many(contacts)
     print(f"-> Đang nạp {len(signups)} signups...")
     db.signups.insert_many(signups)
+    print(f"-> Đang nạp {len(leads)} external leads...")
+    db.leads.insert_many(leads)
     print(f"-> Đang nạp {len(candidates)} exam candidates...")
     db.exam_candidates.insert_many(candidates)
     print(f"-> Đang nạp {len(scores)} exam scores...")
@@ -449,13 +729,15 @@ def run():
         "structure": STRUCTURE,
         "datasets": [{"code": "PM119", "label": "119 thí sinh (gốc)", "linked": True}]
     })
+    total_raw = len(df_reg) + len(df_talkshow) + len(df_fb)
+    merged_count = total_raw - len(contacts)
     db.meta.insert_one({
         "_id": "pipeline",
-        "raw_counts": {"raw_web_signups": len(contacts), "raw_talkshow": len(df_talkshow), "raw_fb_leads": len(df_fb)},
-        "total_raw": len(contacts) + len(df_talkshow) + len(df_fb),
+        "raw_counts": {"raw_web_signups": len(df_reg), "raw_talkshow": len(df_talkshow), "raw_fb_leads": len(df_fb)},
+        "total_raw": total_raw,
         "unique_contacts": len(contacts),
-        "merged_records": 0,
-        "duplicate_rate": 0.0
+        "merged_records": merged_count,
+        "duplicate_rate": round(merged_count / total_raw if total_raw else 0.0, 4)
     })
 
     # 7. Channel budgets & Media Reach
@@ -477,11 +759,47 @@ def run():
     ]
     db.sponsor_benefits.insert_many(benefits)
 
+    # 8. Đồng bộ Danh mục Đối tác & Tài khoản mặc định
+    print("-> Đang đồng bộ danh mục Đối tác & Tài khoản mặc định...")
+    now_ts = datetime.now(timezone.utc)
+    for p in PARTNERS:
+        db.partners.update_one(
+            {"_id": p["code"]},
+            {
+                "$set": {k: p[k] for k in ("name", "type", "description", "scope_rule")},
+                "$setOnInsert": {"modules": p["modules"], "can_view_pii": False, "active": True, "created_at": now_ts},
+            },
+            upsert=True,
+        )
+    db.users.create_index("username", unique=True)
+    for u in DEFAULT_USERS:
+        password = settings.seed_admin_password if u["role"] == "admin" else settings.seed_partner_password
+        if db.users.count_documents({"username": u["username"]}) == 0:
+            db.users.insert_one({
+                **u,
+                "password_hash": hash_password(password),
+                "active": True,
+                "token_version": 0,
+                "created_at": now_ts,
+                "last_login": None,
+            })
+            print(f"  + Tạo tài khoản {u['username']} ({u['partner_code'] or 'admin'})")
+
     print("\n=== HOÀN TẤT NẠP DỮ LIỆU THÀNH CÔNG VÀO MONGODB! ===")
     print(f"- Contacts: {len(contacts)}")
     print(f"- Signups: {len(signups)}")
+    print(f"- External Leads (Talkshow & Facebook): {len(leads)}")
     print(f"- Exam Candidates: {len(candidates)}")
     print(f"- Exam Scores: {len(scores)}")
+
+    return {
+        "contacts": len(contacts),
+        "signups": len(signups),
+        "leads": len(leads),
+        "candidates": len(candidates),
+        "scores": len(scores),
+        "reconciled_at": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 if __name__ == "__main__":

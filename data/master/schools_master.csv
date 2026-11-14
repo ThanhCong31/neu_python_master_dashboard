@@ -1,0 +1,26 @@
+school_id,school_name,school_aliases,school_type,province,region,is_partner
+NEU,Đại học Kinh tế Quốc dân,ĐH Kinh tế Quốc dân;Kinh tế Quốc dân;NEU,Đại học,Hà Nội,Miền Bắc,True
+NH,THPT Chuyên Nguyễn Huệ,THPT Nguyễn Huệ;Chuyên Nguyễn Huệ;THPT Nguyen Hue,THPT,Hà Nội,Miền Bắc,True
+PTIT,Học viện Công nghệ Bưu chính Viễn thông,Học viện Bưu chính Viễn thông;HVCNBCVT;PTIT,Đại học,Hà Nội,Miền Bắc,True
+HUST,Đại học Bách Khoa Hà Nội,ĐHBK Hà Nội;Bách Khoa Hà Nội;HUST,Đại học,Hà Nội,Miền Bắc,False
+FTU,Đại học Ngoại thương,ĐH Ngoại Thương;Ngoại thương Hà Nội;FTU,Đại học,Hà Nội,Miền Bắc,False
+VNU,Đại học Quốc gia Hà Nội,ĐHQGHN;Đại học Quốc gia HN;VNU,Đại học,Hà Nội,Miền Bắc,False
+BA,Học viện Ngân hàng,HV Ngân Hàng;Học viện Ngân Hàng;BA,Đại học,Hà Nội,Miền Bắc,False
+AOF,Học viện Tài chính,HV Tài Chính;Học viện Tài Chính;AOF,Đại học,Hà Nội,Miền Bắc,False
+TMU,Đại học Thương Mại,ĐH Thương Mại;Thương Mại;TMU,Đại học,Hà Nội,Miền Bắc,False
+DAV,Học viện Ngoại giao,HV Ngoại Giao;Học viện Ngoại Giao;DAV,Đại học,Hà Nội,Miền Bắc,False
+AMS,THPT Chuyên Hà Nội - Amsterdam,THPT Hà Nội Amsterdam;Amsterdam;Ams;Chuyên Amsterdam,THPT,Hà Nội,Miền Bắc,False
+CVA,THPT Chu Văn An,THPT Chu Văn An Hà Nội;Chu Văn An,THPT,Hà Nội,Miền Bắc,False
+KHTN,THPT Chuyên Khoa học Tự nhiên,THPT Chuyên KHTN;Chuyên KHTN;KHTN,THPT,Hà Nội,Miền Bắc,False
+CSP,THPT Chuyên ĐH Sư Phạm,Chuyên Sư Phạm;THPT Sư Phạm;CSP,THPT,Hà Nội,Miền Bắc,False
+KLS,THPT Kim Liên,THPT Kim Liên Hà Nội;Kim Liên,THPT,Hà Nội,Miền Bắc,False
+YHOA,THPT Yên Hòa,THPT Yên Hòa Cầu Giấy;Yên Hòa,THPT,Hà Nội,Miền Bắc,False
+TDN,THPT Trần Đại Nghĩa,THPT Chuyên Trần Đại Nghĩa;Trần Đại Nghĩa,THPT,TP. Hồ Chí Minh,Miền Nam,False
+LHP,THPT Chuyên Lê Hồng Phong,THPT Lê Hồng Phong;Lê Hồng Phong TP.HCM,THPT,TP. Hồ Chí Minh,Miền Nam,False
+PTNK,Trường Phổ thông Năng khiếu,PT Năng Khiếu ĐHQG;Phổ thông Năng khiếu,THPT,TP. Hồ Chí Minh,Miền Nam,False
+UEH,Đại học Kinh tế TP.HCM,ĐH Kinh tế TP.HCM;Kinh tế TP.HCM;UEH,Đại học,TP. Hồ Chí Minh,Miền Nam,False
+HCMUT,Đại học Bách Khoa TP.HCM,ĐHBK TP.HCM;Bách Khoa TP.HCM;HCMUT,Đại học,TP. Hồ Chí Minh,Miền Nam,False
+VNUHCM,Đại học Quốc gia TP.HCM,ĐHQG TP.HCM;Đại học Quốc gia TP.HCM,Đại học,TP. Hồ Chí Minh,Miền Nam,False
+QH,THPT Chuyên Quốc Học Huế,Quốc Học Huế;THPT Quốc Học,THPT,Huế,Miền Trung,False
+LS,THPT Chuyên Lam Sơn,Chuyên Lam Sơn;THPT Lam Sơn,THPT,Thanh Hóa,Miền Trung,False
+PBC,THPT Chuyên Phan Bội Châu,Chuyên Phan Bội Châu;THPT Phan Bội Châu,THPT,Nghệ An,Miền Trung,False

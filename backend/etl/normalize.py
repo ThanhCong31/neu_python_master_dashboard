@@ -1,6 +1,9 @@
-"""Hàm chuẩn hoá giá trị đọc từ Excel và danh mục tỉnh/thành → miền."""
+"""Hàm chuẩn hoá giá trị đọc từ Excel và danh mục tỉnh/thành → miền, danh mục trường học."""
 
+import csv
 import math
+import os
+from pathlib import Path
 import re
 from datetime import date, datetime
 
@@ -37,6 +40,106 @@ REGION_NORTH_LABEL = "Miền Bắc"
 REGION_CENTRAL_LABEL = "Miền Trung"
 REGION_SOUTH_LABEL = "Miền Nam"
 REGION_UNKNOWN_LABEL = "Chưa rõ"
+
+# Master data cache cho danh mục trường học
+_SCHOOLS_MASTER: dict[str, dict] = {}
+
+
+def load_schools_master() -> dict[str, dict]:
+    global _SCHOOLS_MASTER
+    if _SCHOOLS_MASTER:
+        return _SCHOOLS_MASTER
+
+    candidates = [
+        Path(__file__).resolve().parents[2] / "data" / "master" / "schools_master.csv",
+        Path(__file__).resolve().parents[1] / "data" / "master" / "schools_master.csv",
+    ]
+    csv_path = next((p for p in candidates if p.exists()), None)
+    if not csv_path:
+        return _SCHOOLS_MASTER
+
+    try:
+        with open(csv_path, mode="r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                s_id = row.get("school_id")
+                s_name = row.get("school_name")
+                s_type = row.get("school_type")
+                prov = row.get("province")
+                reg = row.get("region")
+                is_p = str(row.get("is_partner", "")).lower() in ("true", "1", "yes")
+
+                entry = {
+                    "school_id": s_id,
+                    "school_name": s_name,
+                    "school_type": s_type,
+                    "province": prov,
+                    "region": reg,
+                    "is_partner": is_p,
+                }
+                if s_name:
+                    _SCHOOLS_MASTER[s_name.lower().strip()] = entry
+                if s_id:
+                    _SCHOOLS_MASTER[s_id.lower().strip()] = entry
+
+                aliases = row.get("school_aliases", "")
+                if aliases:
+                    for alias in aliases.split(";"):
+                        alias = alias.strip().lower()
+                        if alias:
+                            _SCHOOLS_MASTER[alias] = entry
+    except Exception:
+        pass
+    return _SCHOOLS_MASTER
+
+
+def norm_school(raw_name: str | None) -> dict:
+    """Chuẩn hóa tên trường và phân loại trường qua Master Data (không đoán startswith)."""
+    val = clean(raw_name)
+    if not val:
+        return {
+            "school": None,
+            "school_type": "Chưa rõ",
+            "school_id": None,
+            "is_partner": False,
+        }
+
+    s_lower = str(val).lower().strip()
+    master = load_schools_master()
+
+    # 1. Tra cứu chính xác hoặc alias
+    if s_lower in master:
+        m = master[s_lower]
+        return {
+            "school": m["school_name"],
+            "school_type": m["school_type"],
+            "school_id": m["school_id"],
+            "is_partner": m["is_partner"],
+        }
+
+    # 2. Tra cứu chứa từ khóa
+    for k, m in master.items():
+        if len(k) >= 5 and k in s_lower:
+            return {
+                "school": m["school_name"],
+                "school_type": m["school_type"],
+                "school_id": m["school_id"],
+                "is_partner": m["is_partner"],
+            }
+
+    # 3. Phân loại theo từ khóa chuẩn nếu chưa có trong Master Data
+    school_type = "Chưa phân loại"
+    if any(kw in s_lower for kw in ("thpt", "trung học phổ thông", "chuyên", "thcs & thpt", "liên cấp")):
+        school_type = "THPT"
+    elif any(kw in s_lower for kw in ("đại học", "đh", "học viện", "cao đẳng", "viện")):
+        school_type = "Đại học / Học viện"
+
+    return {
+        "school": val,
+        "school_type": school_type,
+        "school_id": None,
+        "is_partner": False,
+    }
 
 
 def clean(v):

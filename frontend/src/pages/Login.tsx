@@ -3,9 +3,11 @@ import { useAuth } from "../lib/auth";
 
 const PARTNERS = [
   { code: "DN", name: "Doanh nghiệp" },
-  { code: "THPT", name: "Trường THPT" },
-  { code: "DH", name: "Trường Đại học" },
-  { code: "INFO", name: "Đối tác trường (info)" },
+  { code: "NEU", name: "Đại học Kinh tế Quốc dân" },
+  { code: "NH", name: "THPT Chuyên Nguyễn Huệ" },
+  { code: "THPT", name: "Khối THPT" },
+  { code: "DH", name: "Khối Đại học" },
+  { code: "INFO", name: "Đối tác trường (Info)" },
   { code: "METAADS", name: "Meta Ads" },
   { code: "MIENNAM", name: "Khu vực miền Nam" },
 ];
