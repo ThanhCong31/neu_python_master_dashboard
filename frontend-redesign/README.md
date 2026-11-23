@@ -1,136 +1,151 @@
-# NEU Admissions BI — Hướng dẫn chạy dự án
+> **Revision 3:** See [REDESIGN-V3.md](./REDESIGN-V3.md) for the restored favicon, simplified profile-only theme controls, saved preferences, system API review, and test commands. Frontend-only; backend untouched.
 
-Hướng dẫn này dành cho dev mới clone repo. Dùng **`frontend/` để xem dashboard đang hoạt động** và **`frontend-redesign/` để phát triển giao diện mới**. Bản redesign dùng React, TypeScript, Vite, Tailwind CSS v4 và shadcn/ui; hiện chỉ có trang kiểm tra sáng/tối, **chưa có đăng nhập hay biểu đồ**.
+> **Revision 2:** See [REDESIGN-V2.md](./REDESIGN-V2.md) for partner permission UX fixes, verified save, M3 Expressive dropdowns, theme color picker, and QA checklist. Frontend-only; backend untouched.
 
-| Bạn muốn… | Cần chạy | Địa chỉ |
-|---|---|---|
-| Làm giao diện redesign | Chỉ `frontend-redesign/`; không cần `.env`, MongoDB hay Excel | [localhost:5174](http://localhost:5174) |
-| Xem dashboard có số liệu | MongoDB, FastAPI, dữ liệu demo và `frontend/` | [localhost:5173](http://localhost:5173) |
-| Tích hợp API vào redesign | `frontend-redesign/` và FastAPI; thêm MongoDB và tài khoản cho API có đăng nhập | [Swagger](http://localhost:8000/api/docs) |
+# NEU Admissions BI — Expressive app shell
 
-## 1. Chuẩn bị từ bản clone mới
+Khung ứng dụng React 19 + TypeScript + Vite + Tailwind CSS v4, sử dụng thư viện [Expressive của Grenish](https://expressive.grenishrai.pro/docs/installation).
 
-Cần **Git**, **Node.js 22.12+ (khuyến nghị Node 24 LTS)** và **npm**. Để chạy dashboard đầy đủ, cần thêm **Python 3.12+**, [uv](https://docs.astral.sh/uv/getting-started/installation/) và **MongoDB**. Docker là một cách chạy MongoDB local, không bắt buộc nếu đã có MongoDB local hoặc Atlas.
+Các component UI được cài bằng CLI của Expressive và nằm trực tiếp trong source. Đây là cách phân phối của thư viện. Có thể kiểm tra cấu hình ở `expressive.json`, component ở `src/components/expressive/` và token ở `src/lib/expressive/`. CLI `@grenishrai/expressive` cũng có trong devDependencies.
 
-```sh
-git clone https://github.com/chiinthedesert/neu_python_master_dashboard.git
-cd neu_python_master_dashboard
-```
+## Chạy
 
-Nếu repo yêu cầu quyền truy cập, xin quyền từ người quản lý repo. Dùng nhánh có `frontend-redesign/`. Các khối lệnh bên dưới bắt đầu từ **gốc repo**, trừ khi có ghi chú khác.
-
-## 2. Chạy dashboard đầy đủ với dữ liệu có sẵn trong Git
-
-### 2.1. Chạy MongoDB
-
-Nếu chưa có MongoDB và đã cài Docker, chạy một container dev chỉ mở cổng trên máy local:
+Cần Node.js 22.12+ hoặc Node.js 24.
 
 ```sh
-docker run -d --name neu-bi-mongo -p 127.0.0.1:27017:27017 -v neu-bi-mongo-data:/data/db mongo:8
-```
-
-Lần sau dùng `docker start neu-bi-mongo` thay vì tạo lại. Nếu đã có MongoDB trên cổng `27017`, không chạy thêm container. Với Atlas, dùng URI của cluster dev, cấp quyền đọc/ghi trên DB dev và thêm IP máy chạy vào *Network Access*.
-
-### 2.2. Tạo `.env` ở gốc repo
-
-Nếu chưa có `.env`, chạy `cp .env.example .env`. Sửa các giá trị sau; nếu đã có `.env`, đừng ghi đè file hoặc dùng nhầm DB thật.
-
-| Biến | Giá trị cho dev local |
-|---|---|
-| `MONGO_URI` | `mongodb://localhost:27017` nếu dùng MongoDB local; thay bằng URI riêng nếu dùng Atlas |
-| `MONGO_DB_NAME` | `neu_admissions_dev` hoặc một DB dev riêng |
-| `JWT_SECRET` | Chuỗi ngẫu nhiên ít nhất 32 ký tự; tạo bằng `python3 -c 'import secrets; print(secrets.token_hex(32))'` |
-| `COOKIE_SECURE` | `false` khi chạy HTTP trên localhost |
-| `SEED_ADMIN_PASSWORD` | Mật khẩu dev tự chọn, ít nhất 8 ký tự |
-| `SEED_PARTNER_PASSWORD` | Mật khẩu dev riêng cho nhóm tài khoản đối tác, ít nhất 8 ký tự |
-| `JWT_EXPIRE_HOURS` | Không bắt buộc; mặc định `12` |
-| `DATA_DIR` | Không cần cho bộ demo trong `data/`; chỉ dùng với bộ sáu workbook ở phần 4 |
-
-Biến môi trường của terminal được ưu tiên hơn `.env`. Không đưa `.env`, mật khẩu hoặc URI Atlas vào commit hay vào biến frontend `VITE_*`.
-
-### 2.3. Nạp dữ liệu demo và bật API — Terminal 1
-
-Không cần xin bộ Excel ngoài repo cho bước này. Bản clone có sẵn:
-
-| File | Dữ liệu |
-|---|---|
-| [`data/Demo_Data_khách_hàng.xlsx`](../data/Demo_Data_khách_hàng.xlsx) | Đăng ký web, Google webinar và Facebook Ads |
-| [`data/Diểm giả lập.xlsx`](../data/Diểm%20giả%20lập.xlsx) | Điểm thi giả lập; giữ đúng chính tả tên file trong repo |
-| [`data/master/schools_master.csv`](../data/master/schools_master.csv) | Danh mục chuẩn hóa tên trường |
-
-**Trước khi nạp:** `etl.process_and_seed` ghi lại workbook điểm và xóa/thay dữ liệu trong một số collection của DB đích. Chỉ chạy trên DB dev riêng; sao lưu workbook nếu bạn đã chỉnh sửa và không commit thay đổi Excel phát sinh chỉ do chạy seed. Dừng nếu không chắc URI đang trỏ tới môi trường nào.
-
-```sh
-cd backend
-uv sync --locked
-uv run python -m etl.process_and_seed
-uv run uvicorn app.main:app --port 8000
-```
-
-Chỉ khởi động API sau khi lệnh nạp báo thành công. Với DB dev đã có dữ liệu và tài khoản, bỏ qua lệnh nạp; không cần chạy lại mỗi lần mở dự án. Nếu chỉ cần tạo tài khoản và đối tác mà không đụng tới Excel hay dữ liệu nghiệp vụ, thay lệnh nạp bằng `uv run python -m etl.seed --skip-data`.
-
-### 2.4. Mở dashboard đang hoạt động — Terminal 2
-
-```sh
-cd frontend
-npm ci
-npm run dev
-```
-
-Mở **http://localhost:5173**, đăng nhập bằng `admin` và `SEED_ADMIN_PASSWORD`. Các tài khoản đối tác mặc định là `dn`, `neu`, `nh`, `thpt`, `dh`, `info`, `metaads`, `miennam`; tài khoản mới dùng `SEED_PARTNER_PASSWORD`. Seed thông thường không thay mật khẩu tài khoản đã tồn tại. Thử `dn` để kiểm tra giao diện đối tác: có mục Kết quả thi và Nhà tài trợ, không có CRM hoặc Quản trị.
-
-### 2.5. Kiểm tra đã chạy đúng
-
-1. Mở trực tiếp [GET `/api/health`](http://localhost:8000/api/health) hoặc chạy `curl -fsS http://localhost:8000/api/health`. Kỳ vọng `"ok": true` và tên DB dev đã chọn. Dùng `GET`; `HEAD` không kiểm tra MongoDB.
-2. Trong [Swagger](http://localhost:8000/api/docs), gọi `POST /api/auth/login` với `username` và `password` của tài khoản dev. Trên cùng địa chỉ `localhost`, gọi tiếp `GET /api/auth/me`: kỳ vọng `200` và đúng vai trò. Đăng nhập thiết lập cookie `HttpOnly`; không cần dán JWT vào Swagger.
-3. Với tài khoản `admin`, gọi `GET /api/admin/data-status` để kiểm tra số dòng thật trong MongoDB. Các mục `contacts`, `signups`, `exam_candidates` và `exam_scores` phải có dữ liệu sau khi nạp demo. Không dùng bộ số liệu đối soát của sáu workbook để đánh giá bộ demo.
-4. Trong UI cũ, mở **Tổng quan**, **CRM** và **Kết quả thi** để kiểm tra biểu đồ và bảng. Nếu chỉ chạy `--skip-data`, đăng nhập được nhưng không có số liệu nghiệp vụ; đó là hành vi dự kiến.
-
-## 3. Chạy bản redesign — Terminal riêng
-
-```sh
-cd frontend-redesign
 npm install
 npm run dev
 ```
 
-Mở **http://localhost:5174**. Nút **Giao diện tối** kiểm tra Tailwind và component `Button`. Có thể chạy song song UI cũ trên `5173`. Bản redesign hiện không gọi API, nhưng Vite đã chuyển tiếp `/api` sang `http://localhost:8000` trong chế độ dev; khi tích hợp hãy dùng `/api/...` trên cùng origin để trình duyệt gửi cookie.
+Mở http://localhost:5174. Thử trên điện thoại cùng Wi-Fi bằng `npm run dev -- --host 0.0.0.0`, rồi mở địa chỉ Network mà Vite hiển thị.
 
-`npm run build` kiểm tra TypeScript và tạo `frontend-redesign/dist/`; `npm run preview` xem bản build. FastAPI hiện chỉ phục vụ `frontend/dist` của app cũ, không tự phục vụ bản redesign. API contract có tại [Swagger](http://localhost:8000/api/docs) và [OpenAPI JSON](http://localhost:8000/api/openapi.json). Xem [từ điển dữ liệu và quy tắc nghiệp vụ](../docs/DATA_DICTIONARY.md) trước khi định nghĩa lại KPI hoặc phạm vi đối tác.
+`npm run build` kiểm tra TypeScript và tạo `dist/`. `npm run preview` mở bản build.
 
-## 4. Tùy chọn: nạp bộ sáu workbook gốc để đối soát
+## Khung ứng dụng có kết nối backend
 
-Chỉ dùng khi cần dữ liệu gốc hoặc kết quả đối soát. **Sáu workbook không có trong Git**; xin bộ được phép sử dụng từ người quản lý dữ liệu, không đưa file có thông tin cá nhân vào commit. Đặt cả sáu file trong cùng một thư mục; `DATA_DIR` trong `.env` trỏ tới thư mục đó (đường dẫn tương đối tính từ gốc repo). Khi không đặt, mặc định là `Data-20260929T164510Z-1-001/Data`.
+Chạy backend FastAPI hiện có trên cổng 8000 với MongoDB và tài khoản đã được tạo. Vite chuyển tiếp request `/api` tới `http://127.0.0.1:8000`. Đăng nhập bằng tài khoản hiện có, giống frontend cũ. Bản build cần được phục vụ cùng origin với API hoặc có reverse proxy cho `/api`.
 
-```text
-NEU_CaseStudy_Booklet1_Raw_Data_PTIT*.xlsx
-NEU_CaseStudy_Booklet2_Cleaned_Answer_Key*.xlsx
-Bao_Cao_Hieu_Qua_Truyen_Thong_ROI_DoiSoat*.xlsx
-diem_gia_lap_119_thi_sinh*.xlsx
-diem_gia_lap_Bang_A_24*.xlsx
-diem_gia_lap_Bang_B_95*.xlsx
-```
+- Khôi phục phiên qua `GET /api/auth/me` mỗi lần mở ứng dụng.
+- Đăng nhập qua `POST /api/auth/login`, đăng xuất qua `POST /api/auth/logout`.
+- Khi API trả 401, quay về đăng nhập. Khi máy chủ lỗi hoặc mất kết nối, hiện nút thử lại.
+- Danh sách route và menu được lọc theo `user.modules`. Quản trị yêu cầu thêm vai trò admin.
+- Admin lấy đối tác từ `GET /api/meta/options`; chọn phạm vi và giữ khi chuyển trang.
+- Tài khoản có đổi mật khẩu qua `POST /api/auth/change-password`.
+- Gửi cookie phiên cùng origin. Frontend không lưu mật khẩu hay token vào localStorage.
+- Backend tiếp tục quyết định quyền trên từng request.
 
-Chọn một DB dev khác, ví dụ `neu_admissions_reconcile`, để không ghi đè hoặc trộn với bộ demo. Từ `backend/` sau khi đã chạy `uv sync --locked`:
+Sáu màn nghiệp vụ Tổng quan, Liên hệ, Leads, Truyền thông, Nhà tài trợ và Kết quả thi vẫn là placeholder có chủ ý. Hai màn thuộc Hệ thống (Chất lượng dữ liệu, Quản trị) đã triển khai với API thực. Đăng nhập và Tài khoản đã có sẵn từ bản shell.
 
-```sh
-uv run python -m etl.seed --dry-run
-```
+## Điều hướng
 
-Lệnh trên đọc Excel và in các phép đối soát, không ghi DB. Nếu có dòng `LỆCH`, kiểm tra lại bộ file trước khi tiếp tục: lệnh nạp đầy đủ không tự dừng khi có chênh lệch. Sau khi kiểm tra và xác nhận đúng DB đích:
+Tuyển sinh là một nút menu cha có hai mục con thụt vào, có đường nối và trạng thái được chọn riêng. Có thể mở/đóng nhóm. Trong rail thu gọn, bấm Tuyển sinh sẽ mở rộng sidebar để thấy hai mục con. Các mục độc lập tiếp tục ở cấp trên. Hệ thống có đường phân cách và nhãn riêng.
 
-```sh
-uv run python -m etl.seed
-```
+Dưới 768 px, dùng drawer của Expressive. Từ 768 px, sidebar thu gọn được. Mặc định mở từ 1200 px, có lưu lựa chọn. Ctrl+B hoặc Cmd+B bật/tắt sidebar. Avatar mở menu tài khoản, theme và đăng xuất.
 
-Lệnh đầy đủ thay thế các collection nghiệp vụ, đồng bộ tài khoản và lưu kết quả đối soát vào `import_runs`. Sau khi đổi `MONGO_DB_NAME`, khởi động lại API để dùng DB mới. Bộ sáu file có bộ thi `PM119`, `A24` và `B95`; bộ demo trong Git chỉ tạo `PM119` và có dữ liệu marketing/tài trợ mẫu.
+## Kiểm tra đã thực hiện
 
-## Xử lý lỗi thường gặp
+Bản shell nền trước đây có xác nhận TypeScript và Vite build. **Bản V3 đã chạy kiểm tra cú pháp và import nội bộ, unit tests cho theme/API client. `npm run build` vẫn cần chạy trên máy phát triển do môi trường đóng gói không có đầy đủ npm packages.** Cần chạy `npm ci && npm run build` và thử API thực trên máy phát triển. Chưa kiểm thử tích hợp với MongoDB của dự án. Source giao hàng gọi API backend trực tiếp và không chứa chế độ demo.
 
-| Triệu chứng | Kiểm tra |
+## Cấu trúc và phân công
+
+| Đường dẫn | Trách nhiệm |
 |---|---|
-| API không khởi động, báo `JWT_SECRET` hoặc `MONGO_URI` | `.env` phải ở gốc repo; secret phải đủ 32 ký tự. Kiểm tra biến môi trường terminal có ghi đè file không. |
-| MongoDB timeout hoặc lỗi TLS | Kiểm tra dịch vụ MongoDB local, URI/cổng. Với Atlas, kiểm tra IP allowlist, thông tin tài khoản và quyền DB. |
-| `etl.seed` báo thiếu Booklet/ROI | Bạn đang gọi trình nạp sáu workbook. Dùng `etl.process_and_seed` cho hai file trong `data/`, hoặc cung cấp đủ file và đặt `DATA_DIR`. |
-| Đăng nhập thất bại hoặc `/api/auth/me` trả `401` | Đúng DB và đúng tài khoản seed chưa? Trên HTTP local đặt `COOKIE_SECURE=false`, dùng `localhost` nhất quán và đăng nhập lại sau khi đổi `JWT_SECRET`. Mật khẩu cũ không đổi khi chỉ sửa `.env`. |
-| Vite không gọi được `/api` | Kiểm tra API thực sự ở cổng `8000`; mở `/api/health` trước. Chạy đúng thư mục: `frontend/` ở `5173`, `frontend-redesign/` ở `5174`. |
+| `src/app/` | Router, registry route, kiểu dữ liệu, workspace context |
+| `src/shell/` | Tích hợp sidebar, app bar, profile, scope và theme |
+| `src/components/expressive/` | Source UI do CLI của Expressive cài |
+| `src/lib/expressive/` | Source token, motion và helper của Expressive |
+| `src/styles/globals.css` | Tailwind, theme được CLI sinh và CSS nền |
+| `src/styles/expressive.css` | Utility của Expressive |
+| `src/features/admissions/` | Liên hệ & chuyển đổi, Lead từ biểu mẫu |
+| `src/features/communications/` | Truyền thông, Nhà tài trợ |
+| `src/features/overview/`, `src/features/results/` | Tổng quan, Kết quả thi |
+| `src/features/system/` | Chất lượng dữ liệu, Quản trị, các màn Tài khoản/Đối tác/Dữ liệu/Nhật ký và shared UI |
+| `src/features/account/` | Tài khoản |
+| `src/services/` | HTTP client và hook tải dữ liệu, có hủy request khi unmount |
+| `src/shared/Icons.tsx` | Ánh xạ icon Lucide cho module |
+
+Mỗi thành viên có thể nhận 2–3 màn hình. Triển khai trong file màn hình tương ứng và đặt component, CSS, hook riêng cạnh nó. Mỗi nhóm có `routes.ts` sở hữu nhãn, URL và component của nhóm đó. Shell có sẵn app bar và phạm vi dữ liệu.
+
+Thêm màn hình bằng cách khai báo trong `routes.ts` của feature rồi đăng ký ở `src/app/destinations.ts`. Với module mới, cập nhật `ModuleId` trong `src/app/model.ts`. Menu và router lấy cùng danh sách sau khi lọc quyền.
+
+`useWorkspace()` cung cấp người dùng, danh sách route được phép và đối tác đang xem.
+
+## Component và theme thực sự được dùng
+
+| Component hoặc hệ thống | Điểm tích hợp |
+|---|---|
+| SidebarProvider, Sidebar, SidebarInset, SidebarTrigger | `src/shell/Shell.tsx` |
+| SidebarContent, SidebarGroup, SidebarMenuButton | `src/shell/Navigation.tsx` |
+| TopAppBar | `src/shell/Shell.tsx` |
+| Menu, MenuRadioGroup, MenuRadioItem | `src/shell/Profile.tsx` |
+| Avatar, IconButton | `src/shell/Profile.tsx`, `src/shell/Shell.tsx` |
+| Select | `src/shell/ScopeSelect.tsx` |
+| Expressive color/motion/shape theme | `expressive.json`, `src/styles/globals.css` |
+| Inter Variable, tự phục vụ cả bộ ký tự tiếng Việt | `src/main.tsx` |
+
+Chọn seed mặc định #6750A4, color variant expressive, motion scheme expressive, motion engine CSS và shape scale expressive. Font Inter được nạp từ Fontsource. Icon ứng dụng dùng Lucide. Giấy phép MIT của thư viện nằm trong `EXPRESSIVE-LICENSE`.
+
+Các file trong `components/expressive/` và `lib/expressive/` giữ nguyên nội dung CLI cài. `NavigationTrigger` trong shell truyền aria-expanded theo trạng thái drawer trên mobile và đóng drawer khi chuyển sang desktop.
+
+## Thêm component và cập nhật theme
+
+```sh
+npm run ui -- add pagination
+npm run ui -- diff sidebar
+npm run ui -- theme --seed "#6750A4" --variant expressive
+```
+
+Hệ thống đã có bảng phân trang bằng API ở Chất lượng dữ liệu, và phân trang trên 200 bản ghi gần nhất ở Nhật ký. Pagination CLI chưa được cài (đã dùng nút Expressive tự triển khai). Khi phát triển trang, dùng component từ `@/components/expressive/` và utility token như `bg-surface`, `text-body-large`, `rounded-shape-large`, `spring-spatial-fast`. Đặt CSS tùy chỉnh sau `expressive:theme:end` để CLI có thể tái sinh theme.
+
+Tài liệu gốc — [Installation](https://expressive.grenishrai.pro/docs/installation), [Sidebar](https://expressive.grenishrai.pro/docs/components/sidebar), [Theming](https://expressive.grenishrai.pro/docs/theming).
+
+
+## Bản mở rộng: Hệ thống thực sự hoạt động
+
+Hai màn ở `src/features/system/` dùng endpoint sẵn có của backend `main`, không dùng dữ liệu demo.
+
+- **Chất lượng dữ liệu (`/chat-luong`)**: tổng hợp lỗi/duplicate/flag/merged_distribution; phân tích số lượng theo loại; bảng `issues` và `duplicates` lọc `source`/`issue`, phân trang phía server; trạng thái và kiểm tra của lần import gần nhất (chỉ admin). Nếu đang xem bằng tài khoản đối tác, KHÔNG hiển thị các KPI toàn hệ thống (`pipeline`, `last_import`).
+- **Quản trị (`/quan-tri?tab=...`)**: bốn khu vực có deep link query `users`, `partners`, `data`, `audit`. Tài khoản có tạo, sửa họ tên, chuyển đối tác (theo quyền backend), khóa/mở khóa, đặt lại mật khẩu. Đối tác có chỉnh quyền module, PII và trạng thái. Dữ liệu có xem trạng thái, lịch sử import, nạp lại ETL, upload Excel với bước xác nhận. Nhật ký có lọc và xem JSON chi tiết.
+
+### API sử dụng
+
+| Tính năng | Backend API |
+|---|---|
+| Lỗi/nhật ký chất lượng | `GET /api/quality/summary`, `GET /api/quality/list` |
+| Tài khoản | `GET/POST /api/admin/users`, `PATCH /api/admin/users/{username}`, `POST /api/admin/users/{username}/reset-password` |
+| Đối tác | `GET /api/admin/partners`, `PATCH /api/admin/partners/{code}` |
+| Dữ liệu | `GET /api/admin/data-status`, `GET /api/admin/imports`, `POST /api/admin/reload-data`, `POST /api/admin/upload-file?filename=...` |
+| Nhật ký truy cập | `GET /api/admin/audit?limit=200` |
+
+UI có trạng thái loading/error/empty, retry, xác nhận trước hành động nguy hiểm, thông báo thành công/lỗi. Quyền luôn được backend quyết định; frontend chỉ bổ trợ UX.
+
+### Phạm vi của nhóm frontend và lưu ý tích hợp
+
+**Bản này chỉ thay đổi `frontend-redesign/`; không chỉnh sửa `backend/`, ETL, database hay hợp đồng API.** Các thành phần đều gọi đúng các endpoint có sẵn trên nhánh `main`.
+
+- **D24 — Upload:** API `/api/admin/upload-file` hiện xử lý tên tệp đích từ query. UI chỉ gửi hai tên tệp ETL cố định và yêu cầu xác nhận, **nhưng điều đó không sửa được rủi ro ở backend**. Không xem UI validation là một biện pháp bảo vệ phía server. Cần thông báo cho nhóm backend và tránh đưa upload lên môi trường công khai khi chưa được đánh giá an toàn.
+- **D25 — Quality:** API `/api/quality/summary` có các trường `pipeline` và `last_import` chứa metadata toàn hệ thống. Frontend chỉ hiển thị chúng cho admin và ghi rõ phạm vi; **API gốc vẫn trả chúng theo hành vi hiện có**, nên frontend không thể đảm bảo giới hạn truy cập dữ liệu ở cấp server. Chuyển phát hiện này cho nhóm backend xử lý riêng nếu cần.
+- **D23 — ETL:** `reload-data` và `upload-file` chạy thao tác ghi dữ liệu thật. UI có hộp xác nhận, không có dry-run hay rollback vì các API hiện tại không hỗ trợ. Chỉ kiểm thử trên dữ liệu thử nghiệm hoặc sau khi sao lưu.
+
+Khi API thiếu chức năng hoặc trả dữ liệu không đúng phạm vi, ghi nhận thành vấn đề tích hợp, **không tự tạo endpoint mới, không sửa mã nguồn backend và không giả lập dữ liệu**.
+
+### Kiểm tra thực tế cần chạy trên máy của bạn
+
+```sh
+cd frontend-redesign
+npm ci
+npm run build
+npm run dev
+```
+
+Đồng thời chạy backend FastAPI và MongoDB từ repository hiện có. Kiểm thử với **admin**, **partner có quyền quality** và **partner không có quyền quality**:
+
+1. Admin xem được mọi tab trong Quản trị, partner không nhìn thấy điều hướng Quản trị.
+2. Tạo/sửa/khóa tài khoản, reset mật khẩu. Kiểm thử 403/401 và lỗi khi trùng username.
+3. Thay quyền module/PII/active của đối tác; đăng nhập lại bằng tài khoản đối tác để kiểm tra quyền backend đã cập nhật.
+4. Chuyển scope admin rồi kiểm tra chỉ số thuộc đối tác trong bảng nhật ký quality; pipeline tổng thể luôn được ghi nhãn toàn hệ thống.
+5. Thử filter và phân trang của quality; tài khoản thiếu PII không nhìn thấy dữ liệu đã bị API che.
+6. Kiểm thử import có xác nhận bằng dữ liệu test và **backup MongoDB**; không thử upload file không tin cậy lên backend chưa được vá.
+7. Xem danh sách audit, lọc sự kiện, xem chi tiết, thử lại khi API lỗi; kiểm tra responsive và keyboard navigation.
+
+**Mức kiểm thử khi bàn giao bản ZIP này:** đã kiểm tra cú pháp TS/TSX và đường dẫn import nội bộ. Trong môi trường tạo gói không có npm dependencies hoặc MongoDB của dự án nên **chưa chạy build đầy đủ hoặc kiểm thử E2E**. Không nên coi đây là bản đã QA production.
