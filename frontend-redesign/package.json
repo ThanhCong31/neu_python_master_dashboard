@@ -1,29 +1,41 @@
 {
-  "name": "neu-bi-frontend-redesign",
-  "version": "0.1.0",
+  "name": "neu-admissions-workspace",
   "private": true,
   "type": "module",
-  "engines": { "node": "^20.19.0 || >=22.12.0" },
+  "engines": {
+    "node": ">=22.16.0"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview",
+    "ui": "expressive",
+    "test:theme": "node scripts/test-theme.mjs",
+    "check:system-api": "node scripts/check-system-api.mjs",
+    "test:api": "node scripts/test-api-service.mjs",
+    "test:local": "npm run test:source && npm run test:theme && npm run test:api",
+    "test:source": "node scripts/check-source.mjs"
   },
   "dependencies": {
-    "@radix-ui/react-slot": "^1.2.0",
+    "@base-ui/react": "^1.9.0",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@material/material-color-utilities": "^0.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "lucide-react": "^1.77.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "tailwind-merge": "^3.0.0"
+    "react-router-dom": "^7.18.6",
+    "tailwind-merge": "^3.7.1"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.0.0",
+    "@grenishrai/expressive": "^0.0.1",
+    "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^24.0.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
-    "tailwindcss": "^4.0.0",
+    "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.1"
   }

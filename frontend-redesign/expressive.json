@@ -1,0 +1,30 @@
+{
+  "$schema": "https://expressive.grenishrai.pro/schema.json",
+  "registry": "https://expressive.grenishrai.pro/r",
+  "framework": "vite",
+  "rsc": false,
+  "css": "src/styles/globals.css",
+  "motion": "css",
+  "theme": {
+    "seed": "#6750A4",
+    "variant": "expressive",
+    "contrast": 0,
+    "font": {
+      "brand": "Inter Variable",
+      "plain": "Inter Variable"
+    },
+    "shape": "expressive",
+    "motionScheme": "expressive"
+  },
+  "dirs": {
+    "components": "src/components/expressive",
+    "lib": "src/lib/expressive",
+    "tokens": "src/lib/expressive/tokens",
+    "styles": "src/styles"
+  },
+  "aliases": {
+    "components": "@/components/expressive",
+    "lib": "@/lib/expressive",
+    "tokens": "@/lib/expressive/tokens"
+  }
+}

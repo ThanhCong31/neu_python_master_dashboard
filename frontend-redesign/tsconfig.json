@@ -6,8 +6,10 @@
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,
-    "noEmit": true,
     "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["vite/client", "node"],
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src", "vite.config.ts"]
