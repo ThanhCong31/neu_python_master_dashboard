@@ -12,7 +12,7 @@ export function AppLoading() {
 
 export function LoadingState({ label = 'Đang tải dữ liệu…', className = '', chartHeight, compactChartHeight = chartHeight }: { label?: string; className?: string; chartHeight?: number; compactChartHeight?: number }) {
   if (chartHeight !== undefined) return <div className="loading-chart-container" style={{ '--loading-chart-height': `${chartHeight}px`, '--loading-chart-compact-height': `${compactChartHeight}px` } as CSSProperties}>
-    <div className={`loading-region loading-region--chart ${className}`}><Loading label={label}/></div>
+    <div className={`loading-region loading-region--chart ${className}`}><Loading variant="morph" size={32} label={label}/></div>
   </div>;
-  return <div className={`loading-region ${className}`}><Loading label={label}/></div>;
+  return <div className={`loading-region ${className}`}><Loading variant="morph" size={40} label={label}/></div>;
 }
