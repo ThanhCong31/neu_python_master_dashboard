@@ -1,5 +1,7 @@
 # Kết quả thi — hồ sơ thiết kế V30–V32
 
+> Hồ sơ thiết kế theo baseline lịch sử; xem [design review](exams-design-review.md) và [lịch sử triển khai](../../history/README.md) để biết các quyết định sau audit.
+
 Trạng thái: Research & Planning, chưa triển khai. Baseline V29: workspace `/mnt/data/design-system-work/frontend-redesign` có V28 commit 49c5aaf và diff V29. Không giả định bản trên GitHub đã đồng bộ. Trước coding đối chiếu baseline user, AGENTS/CONTRIBUTING, V20/V28/V29, quy chuẩn Contacts/Leads. Không sửa feature đồng đội, backend hoặc dữ liệu.
 
 ## Thứ tự đọc

@@ -1,5 +1,7 @@
 # Lead từ biểu mẫu — hồ sơ thiết kế V21–V23
 
+> Hồ sơ thiết kế theo baseline lịch sử; xem [design review](leads-design-review.md) và [lịch sử triển khai](../../history/README.md) để biết các quyết định sau audit.
+
 Baseline: V20, `/lead`, nhóm Tuyển sinh. Trạng thái: đề xuất thiết kế, chưa viết code. Ngày: 24/11/2026.
 
 ## Thứ tự đọc
@@ -12,7 +14,7 @@ Baseline: V20, `/lead`, nhóm Tuyển sinh. Trạng thái: đề xuất thiết 
 | [leads-plan.md](leads-plan.md) | Kiến trúc, reuse, vòng triển khai V21–V23 |
 | [leads-review.md](leads-review.md) | Test fixtures, acceptance, review gates |
 
-Đặt trong `frontend-redesign/docs/leads/`. Đọc thêm AGENTS.md, CONTRIBUTING.md, REDESIGN-V20.md, docs/contacts/contacts-design-review.md và contacts-review.md. Nếu tài liệu mâu thuẫn với source thật, xác minh trước khi sửa. Không sửa màn hình teammate, backend, data, Shell, dependencies trong feature này trừ khi có yêu cầu riêng.
+Đặt trong `frontend-redesign/docs/features/leads/`. Đọc thêm AGENTS.md, CONTRIBUTING.md, [V20](../../history/REDESIGN-V20.md), [Contacts design review](../contacts/contacts-design-review.md) và [Contacts review](../contacts/contacts-review.md). Nếu tài liệu mâu thuẫn với source thật, xác minh trước khi sửa. Không sửa màn hình teammate, backend, data, Shell, dependencies trong feature này trừ khi có yêu cầu riêng.
 
 ## Kết luận audit
 

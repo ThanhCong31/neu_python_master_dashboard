@@ -1,5 +1,7 @@
 # Tuyển sinh — bộ hồ sơ thiết kế Contacts
 
+> Hồ sơ thiết kế theo baseline lịch sử; xem [design review](contacts-design-review.md) và [lịch sử triển khai](../../history/README.md) để biết các quyết định sau audit.
+
 **Dự án:** NEU Admissions BI · frontend-redesign · baseline V16 (bản làm việc trong workspace).
 **Ngày:** 24/11/2026. **Trạng thái:** đặc tả để review, chưa triển khai.
 **Phạm vi:** `/crm` — Liên hệ & chuyển đổi; không phải `/lead` — Lead từ biểu mẫu.
@@ -14,12 +16,12 @@
 | [contacts-plan.md](contacts-plan.md) | Kiến trúc, phạm vi file, trình tự V17–V19, bàn giao | Khi bắt đầu triển khai |
 | [contacts-review.md](contacts-review.md) | Kịch bản kiểm thử, rubric, cổng nghiệm thu | Sau mỗi vòng và trước commit |
 
-Đặt các file này cùng nhau tại `frontend-redesign/docs/contacts/`. Giữ tên file để liên kết tương đối hoạt động. Đọc `AGENTS.md` và `CONTRIBUTING.md` hiện có trong repo trước khi chỉnh code. Không coi tài liệu audit cũ là hợp đồng API mới; nếu có mâu thuẫn, xác minh router/backend, ghi quyết định, rồi cập nhật tài liệu.
+Đặt các file này cùng nhau tại `frontend-redesign/docs/features/contacts/`. Giữ tên file để liên kết tương đối hoạt động. Đọc `AGENTS.md` và `CONTRIBUTING.md` hiện có trong repo trước khi chỉnh code. Không coi tài liệu audit cũ là hợp đồng API mới; nếu có mâu thuẫn, xác minh router/backend, ghi quyết định, rồi cập nhật tài liệu.
 
 ## Nguồn và mức độ chắc chắn
 
 - GitHub fork `chiinthedesert/neu_python_master_dashboard`, cây `main` đọc ngày 24/11/2026: tree SHA `89ec8638ddc751f03c38ce4ea0bdb2ca79be0464` (đây là tree SHA, không phải commit SHA). Đã đọc `frontend/src/pages/Contacts.tsx`, `components/DataTable.tsx`, `FilterBar.tsx`, `Viz.tsx`, `lib/hooks.ts`, `backend/app/routers/contacts.py`, `misc.py`, `filters.py`, `backend/etl/process_and_seed.py`, `seed.py`, `docs/DATA_DICTIONARY.md`, `README.md`; xem liên kết trong audit.
-- Đã đọc `neu-dashboard-existing-issues.md`, mục liên quan C13–C19, A04–A06, B08–B09; tham chiếu các quyết định Overview ở `overview-design/overview-plan.md` và `overview-issues.md`.
+- Đã đọc `neu-dashboard-existing-issues.md`, mục liên quan C13–C19, A04–A06, B08–B09; tham chiếu các quyết định Overview ở [Overview plan](../overview/overview-plan.md) và [Overview audit](../overview/overview-issues.md).
 - Đã đối chiếu source V16 trong workspace, gồm shell, routes, trang Contacts đang `return null`, API service, chart adapter/responsive helper, formatters, primitive Expressive, System components. Không giả định bản local trên máy người dùng hoặc branch remote có cùng nội dung; kiểm tra diff trước khi viết patch.
 - Audit tĩnh: chưa chạy MongoDB, chưa đo performance hay kiểm thử với người dùng. Các số liệu ví dụ trong tài liệu là fixture giả lập, không phải số liệu thực. Không sửa source, backend, dữ liệu hoặc Git remote trong bước này.
 
