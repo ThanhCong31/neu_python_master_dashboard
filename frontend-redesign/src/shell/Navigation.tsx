@@ -44,7 +44,7 @@ export function Navigation() {
           active={pathname === item.path}
           onClick={() => setOpenMobile(false)}
         >
-          {item.label}
+          {item.navLabel ?? item.label}
         </SidebarMenuButton>
       </SidebarMenuItem>
     );
@@ -55,12 +55,13 @@ export function Navigation() {
       <SidebarGroup>
         <SidebarMenu>
           {destinations.filter((item) => item.id === "overview").map(link)}
-          {admissions.length > 0 && (
+          {admissions.length === 1 && admissions.map(link)}
+          {admissions.length > 1 && (
             <SidebarMenuItem>
               <SidebarMenuButton
                 render={<button type="button" />}
                 icon={<Users aria-hidden="true" />}
-                ancestorActive={activeAdmission}
+                ancestorActive={activeAdmission && (rail || !expanded)}
                 tooltip="Tuyển sinh"
                 aria-expanded={!rail && expanded}
                 aria-controls={expanded && !rail ? childrenId : undefined}
@@ -75,7 +76,7 @@ export function Navigation() {
                   Tuyển sinh
                   <ChevronDown
                     aria-hidden="true"
-                    className={expanded ? "rotate-180" : ""}
+                    className={expanded ? "rotate-180 !size-4" : "!size-4"}
                   />
                 </span>
               </SidebarMenuButton>
@@ -86,9 +87,11 @@ export function Navigation() {
                       <SidebarMenuSubButton
                         render={<Link to={item.path} />}
                         active={pathname === item.path}
+                        title={item.label}
+                        className="min-h-12 h-auto py-2 whitespace-normal"
                         onClick={() => setOpenMobile(false)}
                       >
-                        {item.label}
+                        {item.navLabel ?? item.label}
                       </SidebarMenuSubButton>
                     </SidebarMenuItem>
                   ))}

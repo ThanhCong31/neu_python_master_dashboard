@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Palette, RotateCcw, X } from "lucide-react";
+import { Palette, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/expressive/button";
 import { IconButton } from "@/components/expressive/icon-button";
 import { getThemeColor, getThemeScheme, setThemeColor, THEME_COLORS, type ThemeColor } from "./theme";
@@ -53,7 +53,6 @@ export function ThemeStudio({ onClose }: { onClose: () => void }) {
                   <span className="neu-theme-preview-action" style={{ background: colors.primary }} />
                 </span>
               </span>
-              {chosen && <span className="neu-theme-selected" aria-hidden="true"><Check size={16} strokeWidth={3}/></span>}
             </button>
           );
         })}

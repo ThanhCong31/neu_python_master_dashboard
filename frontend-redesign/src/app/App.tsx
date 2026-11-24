@@ -1,15 +1,17 @@
+import { AppLoading } from "@/shared/LoadingState";
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Button } from "@/components/expressive/button";
 import Account from "@/features/account/Account";
 import { Login } from "@/features/account/Login";
-import { api, ApiError } from "@/services/api";
+import { api, ApiError, invalidateApiSession } from "@/services/api";
 import { useResource } from "@/services/useResource";
 import { ScreenErrorBoundary } from "@/shared/ScreenErrorBoundary";
 import { Shell } from "@/shell/Shell";
 import { availableTo } from "./destinations";
 import type { User } from "./model";
 import { WorkspaceContext } from "./workspace";
+import { resolveScopeStatus } from "./scope";
 
 function Workspace({ user, signedOut }: { user: User; signedOut: () => void }) {
   const destinations = availableTo(user);
@@ -41,7 +43,7 @@ function Workspace({ user, signedOut }: { user: User; signedOut: () => void }) {
         destinations,
         partner: user.role === "admin" ? partner : null,
         partners: options.state === "ready" ? options.data.partners : [],
-        scopeStatus: user.role === "admin" ? options.state : "ready",
+        scopeStatus: resolveScopeStatus(user.role,partner,options.state,availablePartners),
         retryScope: options.retry,
       }}
     >
@@ -78,7 +80,7 @@ export function App() {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    const expired = () => setSession("anonymous");
+    const expired = () => { invalidateApiSession(); setSession("anonymous"); };
     window.addEventListener("session-expired", expired);
     api<User>("/auth/me", { signal: controller.signal })
       .then((user) => {
@@ -97,16 +99,8 @@ export function App() {
       window.removeEventListener("session-expired", expired);
     };
   }, [attempt]);
-  if (session === "anonymous") return <ScreenErrorBoundary screen="login"><Login accept={setSession} /></ScreenErrorBoundary>;
-  if (session === "loading")
-    return (
-      <main
-        className="grid min-h-dvh place-items-center bg-surface text-on-surface"
-        role="status"
-      >
-        Đang kiểm tra phiên đăng nhập…
-      </main>
-    );
+  if (session === "anonymous") return <ScreenErrorBoundary screen="login"><Login accept={user=>{invalidateApiSession();setSession(user);}} /></ScreenErrorBoundary>;
+  if (session === "loading") return <AppLoading />;
   if (session === "offline")
     return (
       <main className="grid min-h-dvh place-items-center bg-surface p-6 text-on-surface">
@@ -128,7 +122,7 @@ export function App() {
     <ScreenErrorBoundary key={session.username} screen="workspace">
       <Workspace
         user={session}
-        signedOut={() => setSession("anonymous")}
+        signedOut={() => {invalidateApiSession();setSession("anonymous");}}
       />
     </ScreenErrorBoundary>
   );

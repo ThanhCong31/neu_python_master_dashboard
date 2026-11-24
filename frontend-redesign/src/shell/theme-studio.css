@@ -7,7 +7,7 @@
 .neu-theme-dialog p { font-size:.875rem; line-height:1.6; color:var(--ex-color-on-surface-variant); margin:8px 0 21px }
 .neu-theme-colors { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px }
 .neu-theme-option { min-width:0; position:relative; min-height:94px; border:2px solid transparent; border-radius:var(--ex-shape-corner-extra-large); background:var(--ex-color-surface-container); display:grid; place-items:center; padding:8px; cursor:pointer; transition:transform var(--ex-spring-spatial-fast-duration) var(--ex-spring-spatial-fast-easing),background-color var(--ex-spring-effects-fast-duration) var(--ex-spring-effects-fast-easing),border-color var(--ex-spring-effects-fast-duration) var(--ex-spring-effects-fast-easing) }
-@media (hover:hover) and (pointer:fine) { .neu-theme-option:hover { background:var(--ex-color-surface-container-highest); transform:translateY(-2px) } }
+@media (hover:hover) and (pointer:fine) { .neu-theme-option:hover { transform:translateY(-2px) } .neu-theme-option:not(.neu-theme-option--selected):hover { background:var(--ex-color-surface-container-highest) } }
 .neu-theme-option--selected { border-color:var(--ex-color-primary); background:var(--ex-color-primary-container) }
 .neu-theme-option:focus-visible { outline:3px solid var(--ex-color-primary); outline-offset:3px }
 .neu-theme-preview { width:100%; height:72px; position:relative; display:flex; border-radius:var(--ex-shape-corner-large); overflow:hidden; box-shadow:var(--ex-elevation-1) }
@@ -19,7 +19,6 @@
 .neu-theme-preview-heading { width:52%; height:6px; border-radius:99px; opacity:.65 }
 .neu-theme-preview-card { width:100%; height:21px; border-radius:7px }
 .neu-theme-preview-action { width:43%; height:8px; border-radius:99px; margin-left:auto }
-.neu-theme-selected { position:absolute; top:4px; right:4px; display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--ex-color-primary); color:var(--ex-color-on-primary); box-shadow:0 0 0 2px var(--ex-color-surface-container-high) }
 .neu-theme-dialog-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:24px }
 @media(max-width:480px){ .neu-theme-dialog{padding:20px} .neu-theme-colors{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} .neu-theme-option{min-height:88px;padding:6px}.neu-theme-preview{height:65px} }
 @media(prefers-reduced-motion:reduce){ .neu-theme-option{transition:none} .neu-theme-option:hover{transform:none} }

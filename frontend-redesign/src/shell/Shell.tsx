@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useSyncExternalStore } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -12,6 +12,7 @@ import {
 } from "@/components/expressive/sidebar";
 import { TopAppBar } from "@/components/expressive/top-app-bar";
 import { useWorkspace } from "@/app/workspace";
+import { PageActionsContext } from "@/shared/PageActions";
 import { Navigation } from "./Navigation";
 import { IconButton } from "@/components/expressive/icon-button";
 import { CircleUserRound, X } from "lucide-react";
@@ -106,7 +107,7 @@ function ShellContent({
   const { pathname } = useLocation();
   const current = destinations.find((item) => item.path === pathname);
   const title = current?.label ?? "Tài khoản";
-  const section = current?.group ?? "Không gian làm việc";
+  const [actionTarget, setActionTarget] = useState<HTMLDivElement | null>(null);
   const content = useRef<HTMLDivElement>(null);
   const previousPath = useRef(pathname);
 
@@ -121,19 +122,21 @@ function ShellContent({
   }, [pathname, title, setOpenMobile]);
 
   return (
-    <SidebarInset className="overflow-x-clip">
+    <SidebarInset className="shell-page overflow-x-clip">
       <TopAppBar
         className="rounded-t-shape-extra-large bg-surface-container-low"
-        title={<span className="text-title-medium" title={section}>{section}</span>}
+        wrapTitle
+        title={<h1 className="text-title-large font-semibold leading-snug">{title}</h1>}
         navigation={<NavigationTrigger />}
         actions={<div className="flex items-center gap-2">
           {current && current.id !== "admin" && user.role === "admin" &&
-            <div className="hidden lg:block"><Suspense fallback={<span className="text-label-medium text-on-surface-variant">Đang tải phạm vi…</span>}><ScopeSelect change={changeScope} /></Suspense></div>}
+            <div className="shell-scope-inline"><Suspense fallback={<span className="text-label-medium text-on-surface-variant">Đang tải phạm vi…</span>}><ScopeSelect change={changeScope} /></Suspense></div>}
 
+          <div ref={setActionTarget} className="flex shrink-0 items-center" />
         </div>}
       />
       {current && current.id !== "admin" && user.role === "admin" && (
-        <div className="border-b border-outline-variant/50 px-4 py-2 lg:hidden sm:px-6">
+        <div className="shell-scope-row border-b border-outline-variant/50 px-4 py-2 sm:px-6">
           <Suspense fallback={<div className="h-10 w-40 rounded-pill bg-surface-container" role="status" aria-label="Đang tải phạm vi" />}>
             <ScopeSelect change={changeScope} />
           </Suspense>
@@ -144,11 +147,11 @@ function ShellContent({
         ref={content}
         tabIndex={-1}
         aria-label={title}
-        className="min-h-[60dvh] flex-1 p-4 outline-none sm:p-6"
+        className="min-h-[60dvh] min-w-0 flex-1 p-4 outline-none sm:p-6"
       >
-        {current && current.id !== "admin" && current.id !== "quality" &&
-          <header className="mb-6 max-w-4xl"><h1 className="text-headline-medium font-semibold tracking-tight">{title}</h1></header>}
-        <Outlet />
+        <PageActionsContext.Provider value={actionTarget}>
+          <Outlet />
+        </PageActionsContext.Provider>
       </div>
     </SidebarInset>
   );

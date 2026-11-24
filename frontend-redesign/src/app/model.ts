@@ -24,6 +24,7 @@ export interface Destination {
   id: ModuleId;
   path: string;
   label: string;
+  navLabel?: string;
   group?: "Tuyển sinh" | "Hệ thống";
   Screen: ComponentType;
 }

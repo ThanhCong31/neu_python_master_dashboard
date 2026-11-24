@@ -95,6 +95,7 @@ export function Profile({ signedOut }: { signedOut: () => void }) {
           disabled={busy}
           closeOnClick={false}
           onClick={async () => {
+            if(busy || !window.dispatchEvent(new Event("neu-before-sign-out",{cancelable:true})))return;
             setBusy(true);
             setError("");
             try {

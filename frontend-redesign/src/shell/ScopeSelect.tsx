@@ -50,7 +50,7 @@ export function ScopeSelect({
             type="button"
             aria-label={`Phạm vi dữ liệu đang xem: ${selectedName}. Chọn phạm vi`}
             title={`Phạm vi đang xem: ${selectedName}`}
-            className="workspace-scope-trigger focus-ring state-layer flex h-10 max-w-72 cursor-pointer items-center gap-2 rounded-pill bg-secondary-container px-3 text-label-large text-on-secondary-container transition-colors duration-150 ease-out disabled:cursor-default disabled:opacity-60"
+            className="workspace-scope-trigger focus-ring state-layer flex h-12 max-w-72 cursor-pointer items-center gap-2 rounded-pill bg-secondary-container px-3 text-label-large text-on-secondary-container transition-colors duration-150 ease-out disabled:cursor-default disabled:opacity-60"
           />
         }
       >
