@@ -13,9 +13,14 @@
     "test:theme": "node scripts/test-theme.mjs",
     "check:system-api": "node scripts/check-system-api.mjs",
     "test:api": "node scripts/test-api-service.mjs",
-    "test:local": "npm run test:source && npm run test:theme && npm run test:api && npm run test:overview",
+    "test:local": "npm run test:source && npm run test:theme && npm run test:api && npm run test:overview && npm run test:contacts && npm run test:leads && npm run test:exams && npm run test:charts && npm run test:reliability",
     "test:source": "node scripts/check-source.mjs",
-    "test:overview": "node --experimental-strip-types scripts/test-overview.mjs"
+    "test:overview": "node --experimental-strip-types scripts/test-overview.mjs",
+    "test:contacts": "node --experimental-strip-types scripts/test-contacts.mjs",
+    "test:leads": "node --experimental-strip-types scripts/test-leads.mjs",
+    "test:exams": "node --experimental-strip-types scripts/test-exams.mjs",
+    "test:charts": "node --experimental-strip-types scripts/test-charts.mjs",
+    "test:reliability": "node scripts/test-reliability.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

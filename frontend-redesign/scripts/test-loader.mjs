@@ -1,5 +1,5 @@
 /**
- * Minimal TypeScript test loader built on Node's type stripping (Node >=22.12).
+ * Minimal TypeScript test loader built on Node's type stripping (Node >=22.13).
  * Runtime test fixtures have no npm compiler API dependency: TypeScript 7 is a
  * native compiler and intentionally doesn't provide the TS 6 JS API.
  */
@@ -9,7 +9,7 @@ import vm from "node:vm";
 
 export function evaluateTypescript(fileURL, { context, imports = {}, exports: exportNames }) {
   const source = readFileSync(fileURL, "utf8");
-  let js = stripTypeScriptTypes(source, { mode: "transform", sourceUrl: String(fileURL) });
+  let js = stripTypeScriptTypes(source, { mode: "strip", sourceUrl: String(fileURL) });
   // These fixtures use named imports; expose their mocked dependencies explicitly.
   js = js.replace(/^\s*import\s+\{([^}]+)\}\s+from\s+["']([^"']+)["'];?\s*$/gm,
     (_match, names, specifier) => `const { ${names} } = __imports[${JSON.stringify(specifier)}];`);
