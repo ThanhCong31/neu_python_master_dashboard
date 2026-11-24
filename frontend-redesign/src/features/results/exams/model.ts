@@ -1,0 +1,30 @@
+export type Round='qualifier'|'final';
+export type Part={level?:string|null;sections?:Record<string,number|null>;total?:number|null;rank?:number|null;grade?:string|null};
+export type Candidate={stt?:number|null;contact_id?:string|null;full_name?:string|null;email?:string|null;board?:string|null;school?:string|null;school_type?:string|null;province?:string|null;region?:string|null;paid?:boolean|null;qualifier?:Part|null;final?:Part|null;advanced?:boolean|null;certificate?:boolean|null;best_total?:number|null};
+export type ExamList={total:number;page:number;page_size:number;rows:Candidate[]};
+export type Dataset={code:string;label:string;linked:boolean};
+export const multiFields=[['board','Bảng thi'],['region','Miền'],['province','Tỉnh/thành'],['school_type','Loại trường'],['school','Trường'],['grade','Xếp loại vòng loại']] as const;
+export const boolFields=[['paid','Đóng phí'],['certificate','Ngưỡng chứng chỉ'],['advanced','Vào chung kết']] as const;
+export type MultiKey=typeof multiFields[number][0];
+export type BoolKey=typeof boolFields[number][0];
+export type FilterKey=MultiKey|BoolKey;
+export type Filters=Partial<Record<FilterKey,string>>;
+export type ExamOptions={datasets:Dataset[]}&Record<MultiKey,string[]>;
+export type OptionsResponse={viewing_partner:string|null;exams?:ExamOptions};
+export type Group={key:string|null;count:number;avg:number|null;min:number|null;max:number|null;certificates:number;finalists:number;cert_rate:number|null};
+export type HistogramRow={board:string|null;bin:number;count:number};
+export type GradeRow={board:string|null;round:Round;grade:string;count:number};
+export type SectionRow={board:string|null;round:Round;section:string;avg:number|null;count:number;max_score:number|null;pct:number|null};
+export const dimensions=[['by_board','Bảng thi','board'],['by_school','Trường','school'],['by_school_type','Loại trường','school_type'],['by_province','Tỉnh/thành','province'],['by_region','Miền','region']] as const;
+export type Dimension=typeof dimensions[number][0];
+export type Summary={kpi:{count:number;avg:number|null;min:number|null;max:number|null;finalists:number;final_avg:number|null;certificates:number;paid:number;cert_rate:number|null};params?:Partial<Record<'certificate_threshold'|'top_ratio'|'grade_excellent'|'grade_good'|'grade_average',number|null>>;histogram:HistogramRow[];grades:GradeRow[];grade_order:string[];sections:SectionRow[];structure?:{board:string;round:Round;section:string;section_label:string}[]}&Record<Dimension,Group[]>;
+export const warning='Điểm thi giả lập — không dùng để công bố hoặc đánh giá cá nhân.';
+export const textValue=(v:unknown)=>v===null||v===undefined||v===''?'—':String(v);
+export const finite=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v);
+export const countValid=(v:unknown):v is number=>finite(v)&&Number.isInteger(v)&&v>=0;
+export const scoreText=(v:unknown)=>finite(v)?new Intl.NumberFormat('vi-VN',{maximumFractionDigits:20}).format(v):'—';
+export const layoutForWidth=(w:number)=>w<680?'compact':w<1000?'medium':'expanded';
+export const certificateText=(v:unknown)=>v===true?'Đạt ngưỡng':v===false?'Chưa đạt ngưỡng':'Chưa có dữ liệu';
+export function finalText(r:Candidate){return r.final&&finite(r.final.total)?r.advanced===false?'Có điểm CK nhưng cờ vào CK không khớp':'Có điểm chung kết':r.advanced===true?'Vào chung kết · Chưa có điểm CK':'Không ghi nhận điểm CK';}
+export const sectionLabel=(s:string)=>({reading:'Đọc hiểu code',design:'Thiết kế · viết hàm',debugging:'Debugging'} as Record<string,string>)[s]??s;
+export function scopedOptions(r:OptionsResponse,scope:string|null):ExamOptions|undefined {const o=r.exams;if(r.viewing_partner!==scope||!o||!Array.isArray(o.datasets)||!o.datasets.every(d=>typeof d.code==='string'&&!!d.code&&typeof d.label==='string'&&typeof d.linked==='boolean')||new Set(o.datasets.map(d=>d.code)).size!==o.datasets.length||!multiFields.every(([k])=>Array.isArray(o[k])&&o[k].every(v=>typeof v==='string')))return undefined;return o;}
