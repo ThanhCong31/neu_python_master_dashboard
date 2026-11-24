@@ -1,0 +1,79 @@
+.dw-dialog {position:fixed;inset:0;margin:auto;width:min(640px,calc(100% - 32px));max-width:100%;max-height:min(86dvh,800px);padding:0;border:none;border-radius:var(--ex-shape-corner-extra-large,28px);background:var(--ex-color-surface-container-low);color:var(--ex-color-on-surface);box-shadow:0 16px 50px #0003;overflow:hidden;}
+.dw-dialog[open]{display:flex;flex-direction:column;}
+.dw-dialog::backdrop{background:#0006;}
+.dw-dialog-head,.dw-dialog-foot{padding:16px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--ex-color-surface-container);flex-shrink:0;}
+.dw-dialog-head{justify-content:space-between;border-bottom:1px solid var(--ex-color-outline-variant);}
+.dw-dialog-head h2{flex:1;min-width:0;overflow-wrap:anywhere;font-size:1.125rem;font-weight:600;margin:0;}
+.dw-dialog-head [data-slot="icon-button"]{width:48px;height:48px;flex:none;}
+.dw-dialog-foot{justify-content:flex-end;border-top:1px solid var(--ex-color-outline-variant);padding-bottom:max(16px,env(safe-area-inset-bottom));}
+.dw-dialog-body{overflow:auto;padding:20px;display:grid;gap:18px;min-height:0;overscroll-behavior:contain;}
+.dw-select{min-width:0;max-width:100%;width:min(100%,18rem);}
+.dw-table-scroll{overflow:auto;max-width:100%;min-width:0;border:1px solid var(--ex-color-outline-variant);border-radius:16px;max-height:min(65vh,740px);scrollbar-width:thin;}
+.dw-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.875rem;text-align:start;font-variant-numeric:tabular-nums;}
+.dw-table :is(th,td){padding:10px 14px;border-bottom:1px solid var(--ex-color-outline-variant);text-align:start;vertical-align:middle;overflow-wrap:anywhere;}
+.dw-table th{font-weight:600;}
+.dw-table thead th{position:sticky;top:0;z-index:1;background:var(--ex-color-surface-container-high);color:var(--ex-color-on-surface-variant);white-space:nowrap;}
+.dw-table tbody tr:last-child>*{border-bottom:0;}
+.dw-table tbody tr:hover{background:var(--ex-color-surface-container);}
+.dw-table td:first-child{min-width:180px;max-width:350px;}
+.dw-table :is(td,th):last-child{width:1%;padding-inline:8px;}
+.dw-table td:not(:first-child):not(:last-child){min-width:104px;max-width:240px;}
+.dw-sort-header{display:flex;align-items:center;gap:4px;background:none;color:inherit;border:0;font:inherit;cursor:pointer;text-align:start;padding:0;max-width:100%;}
+.dw-sort-icon{flex:none;width:15px;height:15px;}
+.dw-record-list{padding:0;margin:0;list-style:none;border:1px solid var(--ex-color-outline-variant);border-radius:18px;}
+.dw-record-list li{display:flex;gap:8px;align-items:center;padding:14px 10px 14px 14px;border-bottom:1px solid var(--ex-color-outline-variant);}
+.dw-record-list li:last-child{border:0;}
+.dw-list-content{display:grid;gap:5px;flex:1;min-width:0;overflow-wrap:anywhere;}
+.dw-list-content>strong{font-size:.9375rem;font-weight:600;color:var(--ex-color-on-surface);}
+.dw-pager{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;min-width:0;font-size:.875rem;color:var(--ex-color-on-surface-variant);}
+.dw-pager .dw-select{width:10.5rem;}
+.dw-pager .dw-select [data-slot="select-shell"]{flex-basis:5rem;}
+.dw-pager>span{flex:1 1 auto;}
+.dw-page-nav{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;font-variant-numeric:tabular-nums;}
+.dw-page-nav [data-slot="icon-button"]{width:48px;height:48px;flex:none;}
+.dw-status{display:inline-flex;align-items:center;justify-self:start;font-size:.8125rem;font-weight:550;line-height:1.4;border-radius:8px;padding:5px 9px;max-width:100%;overflow-wrap:anywhere;background:var(--ex-color-surface-container-highest);color:var(--ex-color-on-surface-variant);}
+.dw-status[data-tone="primary"]{background:var(--ex-color-primary-container);color:var(--ex-color-on-primary-container);}
+.dw-status[data-tone="secondary"]{background:var(--ex-color-secondary-container);color:var(--ex-color-on-secondary-container);}
+.dw-status[data-tone="tertiary"]{background:var(--ex-color-tertiary-container);color:var(--ex-color-on-tertiary-container);}
+.dw-status[data-tone="error"]{background:var(--ex-color-error-container);color:var(--ex-color-on-error-container);}
+.dw-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+@container (max-width:679px){.dw-pager>span{flex:1 1 100%;}.dw-table-scroll{max-height:400px;}.dw-select{width:100%;}}
+@container (max-width:340px){.dw-page-nav{margin-inline-start:auto;}}
+@media(max-width:680px){.dw-dialog{width:100%;max-width:100%;max-height:100dvh;height:100dvh;border-radius:0;}.dw-dialog-body{padding:16px;flex:1;}.dw-dialog-head,.dw-dialog-foot{padding-inline:16px;}.dw-dialog-head{padding-top:max(16px,env(safe-area-inset-top));}}
+
+.dw-row-action{width:48px;height:48px;flex:none;}
+.dw-export{display:grid;gap:6px;max-width:100%;}
+.dw-error{font-size:.875rem;color:var(--ex-color-on-error-container);background:var(--ex-color-error-container);border-radius:12px;padding:12px;overflow-wrap:anywhere;}
+.dw-note{font-size:.875rem;color:var(--ex-color-on-surface-variant);line-height:1.5;overflow-wrap:anywhere;}
+.dw-table :is(th,td){box-sizing:border-box;}
+.dw-sort-header{min-height:44px;}
+
+.dw-table :is(th,td):last-child{padding-inline:4px;}
+.dw-dialog-foot [data-slot="button"]{min-height:48px;max-width:100%;white-space:normal;}
+.dw-dialog-foot [data-slot="button"]{height:auto;padding-block:10px;}
+.dw-select [data-slot="select-trigger"]{min-width:0;}
+
+/* Shared compact toolbar: one row when space allows, natural wrapping otherwise. */
+.dw-record-toolbar{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px;min-width:0;}
+.dw-search{flex:1 1 16rem;min-width:0;width:auto;}
+.dw-record-toolbar>.dw-select{flex:0 1 18rem;width:auto;}
+.dw-tool-actions{display:flex;align-items:flex-start;justify-content:flex-end;gap:8px;flex-wrap:wrap;min-width:0;max-width:100%;margin-inline-start:auto;}
+.dw-tool-actions [data-slot="button"]{--ex-control-height:3rem;min-height:3rem;}
+@container (max-width:679px){
+ .dw-search{flex-basis:100%;}
+ .dw-record-toolbar>.dw-select{flex:1 1 13rem;}
+ .dw-tool-actions{flex:0 1 auto;}
+}
+@container (max-width:400px){
+ .dw-record-toolbar>.dw-select{flex-basis:100%;}
+ .dw-tool-actions{flex:1 1 100%;}
+ .dw-pager .dw-select{width:min(100%,10.5rem);}
+}
+
+/* Column alignment belongs to the column, not its current index. */
+.dw-table :is(th,td)[data-align="center"]{text-align:center;}
+.dw-table :is(th,td)[data-align="end"]{text-align:end;}
+.dw-table th[data-align="center"] .dw-sort-header{justify-content:center;text-align:center;width:100%;}
+.dw-table th[data-align="end"] .dw-sort-header{justify-content:flex-end;text-align:end;width:100%;}
+/* Keep the label centered even with a sort arrow. Reserve equal space on both sides. */
+.dw-table th[data-align="center"] .dw-sort-header::before{content:"";width:15px;flex:none;}

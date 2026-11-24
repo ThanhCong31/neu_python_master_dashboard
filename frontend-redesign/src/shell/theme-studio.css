@@ -1,0 +1,24 @@
+/* Material tonal previews. Each thumbnail shows an actual navigation + surface role. */
+.neu-theme-dialog { border:0; width:min(520px,calc(100vw - 28px)); max-height:90dvh; overflow:auto; inset:0; margin:auto; padding:26px; border-radius:var(--ex-shape-corner-extra-large); background:var(--ex-color-surface-container-high); color:var(--ex-color-on-surface); box-shadow:var(--ex-elevation-3) }
+.neu-theme-dialog::backdrop { background:rgba(0,0,0,.48) }
+.neu-theme-dialog-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px }
+.neu-theme-dialog-symbol { height:48px; width:48px; display:grid; place-items:center; border-radius:var(--ex-shape-corner-large); background:var(--ex-color-primary-container); color:var(--ex-color-on-primary-container) }
+.neu-theme-dialog h2 { font-size:1.45rem; font-weight:700; letter-spacing:-.025em; line-height:1.3 }
+.neu-theme-dialog p { font-size:.875rem; line-height:1.6; color:var(--ex-color-on-surface-variant); margin:8px 0 21px }
+.neu-theme-colors { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px }
+.neu-theme-option { min-width:0; position:relative; min-height:94px; border:2px solid transparent; border-radius:var(--ex-shape-corner-extra-large); background:var(--ex-color-surface-container); display:grid; place-items:center; padding:8px; cursor:pointer; transition:transform var(--ex-spring-spatial-fast-duration) var(--ex-spring-spatial-fast-easing),background-color var(--ex-spring-effects-fast-duration) var(--ex-spring-effects-fast-easing),border-color var(--ex-spring-effects-fast-duration) var(--ex-spring-effects-fast-easing) }
+@media (hover:hover) and (pointer:fine) { .neu-theme-option:hover { transform:translateY(-2px) } .neu-theme-option:not(.neu-theme-option--selected):hover { background:var(--ex-color-surface-container-highest) } }
+.neu-theme-option--selected { border-color:var(--ex-color-primary); background:var(--ex-color-primary-container) }
+.neu-theme-option:focus-visible { outline:3px solid var(--ex-color-primary); outline-offset:3px }
+.neu-theme-preview { width:100%; height:72px; position:relative; display:flex; border-radius:var(--ex-shape-corner-large); overflow:hidden; box-shadow:var(--ex-elevation-1) }
+.neu-theme-preview-rail { width:34%; display:flex; flex-direction:column; gap:7px; padding:10px 5px; align-items:stretch }
+.neu-theme-preview-dot { width:12px; height:12px; border-radius:50%; margin-left:5px }
+.neu-theme-preview-nav { height:14px; width:100%; border-radius:99px }
+.neu-theme-preview-nav-line { height:5px; width:70%; margin-left:5px; border-radius:99px }
+.neu-theme-preview-content { flex:1; display:flex; flex-direction:column; padding:11px 9px; gap:8px; align-items:flex-start }
+.neu-theme-preview-heading { width:52%; height:6px; border-radius:99px; opacity:.65 }
+.neu-theme-preview-card { width:100%; height:21px; border-radius:7px }
+.neu-theme-preview-action { width:43%; height:8px; border-radius:99px; margin-left:auto }
+.neu-theme-dialog-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:24px }
+@media(max-width:480px){ .neu-theme-dialog{padding:20px} .neu-theme-colors{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} .neu-theme-option{min-height:88px;padding:6px}.neu-theme-preview{height:65px} }
+@media(prefers-reduced-motion:reduce){ .neu-theme-option{transition:none} .neu-theme-option:hover{transform:none} }

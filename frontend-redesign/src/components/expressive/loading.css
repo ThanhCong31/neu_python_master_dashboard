@@ -1,0 +1,21 @@
+.ex-loading {display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; max-width:100%; text-align:center; overflow-wrap:anywhere; color:var(--ex-color-on-surface-variant); font-size:var(--ex-type-body-medium-size); line-height:var(--ex-type-body-medium-line-height);}
+.ex-loading-indicator {display:grid; place-items:center; flex:none; color:var(--ex-color-primary);}
+.ex-loading-indicator--morph {border-radius:50%; background:var(--ex-color-primary-container); color:var(--ex-color-on-primary-container);}
+.ex-loading-morph {display:block; width:79.1667%; height:79.1667%; animation:ex-progress-spin 4.666s linear infinite;}
+.ex-loading-ring {width:100%; height:100%; animation:ex-progress-spin 1.4s linear infinite;}
+.ex-loading-track {stroke:var(--ex-color-secondary-container);}
+.ex-loading-arc {stroke:currentColor;}
+.loading-region {display:grid; place-items:center; min-width:0; min-height:180px; padding:24px 12px; box-sizing:border-box;}
+.loading-region > .ex-loading {place-self:center;}
+.loading-chart-container {container:loading-chart / inline-size; min-width:0; width:100%;}
+.loading-region--chart {min-height:var(--loading-chart-height, 260px);}
+@container loading-chart (max-width:479px) {.loading-region--chart {min-height:var(--loading-chart-compact-height, 240px);}}
+.app-loading {display:grid; place-items:center; min-height:100dvh; padding:24px; background:var(--ex-color-surface); color:var(--ex-color-on-surface); box-sizing:border-box;}
+.app-loading-content {display:flex; flex-direction:column; align-items:center; text-align:center; gap:28px; width:100%; max-width:320px;}
+.app-loading-brand {display:flex; align-items:center; gap:12px; text-align:start;}
+.app-loading-brand img {flex:none; width:36px; height:36px;}
+.app-loading-brand strong {display:block; font-size:var(--ex-type-title-large-size); line-height:var(--ex-type-title-large-line-height); font-weight:600;}
+.app-loading-brand small {display:block; font-size:var(--ex-type-label-medium-size); color:var(--ex-color-on-surface-variant);}
+@media (prefers-reduced-motion:reduce) {.ex-loading-morph,.ex-loading-ring {animation:none!important;}}
+/* Panel styles must not push the indicator to their usual top edge. */
+.loading-region.ct-panel,.loading-region.ld-panel,.loading-region.exm-panel {align-content:center; justify-items:center;}

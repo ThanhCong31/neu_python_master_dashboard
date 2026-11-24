@@ -1,0 +1,74 @@
+/* Contacts: scoped Material 3 Expressive surfaces, responsive to available content. */
+.ct-page {container:contacts / inline-size; min-width:0; display:grid; gap:16px; color:var(--ex-color-on-surface); --ct-muted:var(--ex-color-on-surface-variant); --ct-divider:var(--ex-color-outline-variant); --ct-low:var(--ex-color-surface-container-low); --ct-mid:var(--ex-color-surface-container); --ct-high:var(--ex-color-surface-container-high); --ct-primary:var(--ex-color-primary); --ct-on:var(--ex-color-on-surface);}
+.ct-page *, .ct-dialog * {box-sizing:border-box; min-width:0;}
+.ct-page h2,.ct-dialog h2 {font-size:1.125rem; font-weight:600; line-height:1.35; letter-spacing:-.02em; margin:0; overflow-wrap:anywhere;}
+.ct-page h3,.ct-dialog h3 {font-size:1rem; font-weight:600; margin:0;}
+.ct-page p,.ct-dialog p {margin:0; overflow-wrap:anywhere;}
+.ct-top,.ct-filters,.ct-panel-head {display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-width:0;}
+.ct-top,.ct-panel-head {justify-content:space-between;}
+.ct-filters {gap:8px;}
+.ct-panel {background:var(--ex-color-surface-container-low); border-radius:24px; padding:20px; min-width:0; display:grid; gap:16px; align-content:start;}
+.ct-note,.ct-count,.ct-page small,.ct-dialog small {font-size:.875rem; line-height:1.5; color:var(--ex-color-on-surface-variant);}
+.ct-error {font-size:.875rem; color:var(--ex-color-on-error-container); background:var(--ex-color-error-container); border-radius:12px; padding:12px; overflow-wrap:anywhere;}
+.ct-state {min-height:180px; display:grid; align-content:center; justify-items:start; gap:12px; color:var(--ex-color-on-surface-variant); overflow-wrap:anywhere;}
+.ct-records {padding:20px;}
+.ct-export {display:grid; gap:6px; max-width:100%;}
+
+.ct-dialog input[type=date] {background:var(--ex-color-surface-container); color:var(--ex-color-on-surface); border:1px solid var(--ex-color-outline); border-radius:12px; padding:8px 12px; min-height:44px; max-width:100%; font:inherit; accent-color:var(--ex-color-primary);}
+.ct-table-scroll {overflow:auto; max-width:100%; min-width:0; border:1px solid var(--ct-divider); border-radius:16px; max-height: min(65vh,740px); scrollbar-width:thin;}
+.ct-table {width:100%; border-collapse:separate; border-spacing:0; font-size:.875rem; text-align:left; font-variant-numeric:tabular-nums;}
+.ct-table th,.ct-table td {padding:10px 14px; border-bottom:1px solid var(--ct-divider); text-align:left; vertical-align:middle; overflow-wrap:anywhere;}
+.ct-table th {font-weight:600;}
+.ct-table thead th {position:sticky; top:0; z-index:1; background:var(--ex-color-surface-container-high); color:var(--ct-muted); white-space:nowrap;}
+.ct-table tbody tr:last-child>* {border-bottom:0;}
+.ct-table tbody tr:hover {background:var(--ct-mid);}
+.ct-table td:first-child {min-width:180px; max-width:350px;}
+.ct-table td:last-child,.ct-table th:last-child {width:1%; padding-inline:8px;}
+.ct-table td:not(:first-child):not(:last-child) {min-width:104px; max-width:240px;}
+.ct-identity,.ct-payment-cell {display:grid; gap:4px;}
+.ct-identity strong {font-size:.9375rem; font-weight:600; color:var(--ct-on); overflow-wrap:anywhere;}
+.ct-list-payment {display:flex; gap:6px 10px; align-items:center; flex-wrap:wrap; font-size:.875rem; font-variant-numeric:tabular-nums;}
+.ct-analysis {display:grid; gap:16px; min-width:0;}
+.ct-metrics {display:grid; grid-template-columns:minmax(0,1.3fr) repeat(2,minmax(0,1fr)); gap:6px; margin:0;}
+.ct-metrics>div {background:var(--ct-mid); padding:22px; border-radius:12px; display:grid; align-content:start; gap:10px;}
+.ct-metrics>div:first-child {background:var(--ex-color-primary-container); color:var(--ex-color-on-primary-container); border-radius:28px 12px 12px 28px;}
+.ct-metrics>div:last-child {border-radius:12px 28px 28px 12px;}
+.ct-metrics dt,.ct-metrics p {font-size:.875rem; line-height:1.45; overflow-wrap:anywhere;}
+.ct-metrics dd {font-size:clamp(1.5rem,3cqi,2.25rem); margin:0; font-weight:550; line-height:1.15; letter-spacing:-.035em; font-variant-numeric:tabular-nums; overflow-wrap:anywhere;}
+.ct-metrics .ct-hero dd {font-size:clamp(2.5rem,5cqi,4rem);}
+.ct-analysis-pair {display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:12px;}
+.ct-funnel-step {display:grid; gap:6px;}
+.ct-funnel-step>div:first-child {display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap;}
+.ct-track {height:12px; border-radius:999px; background:var(--ex-color-surface-container-highest); overflow:hidden;}
+.ct-track>div {height:100%; background:var(--ex-color-on-secondary-container); border-radius:inherit;}
+.ct-track>div[data-stage='1'] {background:var(--ex-color-primary);}.ct-track>div[data-stage='2'] {background:var(--ex-color-tertiary);}
+.ct-follow {background:var(--ex-color-secondary-container); color:var(--ex-color-on-secondary-container);}
+.ct-follow .ct-note {color:inherit;}.ct-big {font-weight:550; font-size:clamp(2rem,4cqi,3.5rem); font-variant-numeric:tabular-nums; letter-spacing:-.035em;}
+.ct-analysis-table {max-height:420px;}.ct-analysis-table .ct-table td:not(:first-child),.ct-analysis-table .ct-table th:not(:first-child) {text-align:right; white-space:nowrap;}
+.ct-analysis-table .ct-table td:last-child,.ct-analysis-table .ct-table th:last-child {width:auto; padding-inline:14px;}
+.ct-spacer {flex:1;}.ct-filter-section,.ct-detail-section {display:grid; gap:12px; border-top:1px solid var(--ex-color-outline-variant); padding-top:16px;}
+.ct-date-grid {display:grid; gap:12px; grid-template-columns:repeat(2,minmax(0,1fr));}.ct-date-grid label {display:grid; gap:6px; font-size:.875rem;}
+.ct-choices {min-inline-size:0; border:1px solid var(--ex-color-outline-variant); padding:8px 12px; border-radius:16px; margin:0; display:grid; gap:8px;}.ct-choices legend {padding:0 6px; font-weight:550; font-size:.875rem;}
+.ct-choice-list {max-height:244px; overflow:auto; overscroll-behavior:contain;}
+.ct-detail-hero {padding:18px; border-radius:22px; background:var(--ex-color-primary-container); color:var(--ex-color-on-primary-container); display:grid; gap:8px;}.ct-detail-hero h3 {font-size:1.4rem; overflow-wrap:anywhere;}
+.ct-detail-section dl {margin:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;}.ct-detail-section dt {font-size:.8125rem; color:var(--ex-color-on-surface-variant);}.ct-detail-section dd {margin:4px 0 0; overflow-wrap:anywhere; white-space:pre-wrap; font-size:.9375rem;}
+.ct-sr {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+@container contacts (max-width:999px) {.ct-metrics {grid-template-columns:repeat(2,minmax(0,1fr));}.ct-metrics>div:first-child {grid-column:span 2; border-radius:24px 24px 12px 12px;}.ct-metrics>div:last-child {border-radius:12px;}}
+@container contacts (max-width:679px) {.ct-top {align-items:stretch;}.ct-top>button {margin-left:auto;}.ct-panel {padding:16px; border-radius:20px; gap:12px;}.ct-analysis-pair {grid-template-columns:1fr;}.ct-metrics>div {padding:16px;}.ct-table-scroll {max-height:400px;}}
+@container contacts (max-width:340px) {.ct-metrics {grid-template-columns:1fr;}.ct-metrics>div:first-child {grid-column:1;}.ct-panel {padding:12px;}.ct-panel-head {align-items:flex-start;}}
+@media(max-width:680px) {.ct-date-grid,.ct-detail-section dl {grid-template-columns:1fr;}}
+@media(prefers-reduced-motion:reduce) {.ct-page *, .ct-dialog * {scroll-behavior:auto!important;}}
+
+/* View controls and filter chips adapt to the content width. Refresh lives in Shell. */
+.ct-filter-actions,.ct-filter-chips {display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;}
+.ct-filter-chips {flex:1 1 240px;}
+@container contacts (max-width:679px) {.ct-filter-actions {width:100%;}.ct-filter-chips {flex-basis:100%;}.ct-filters {gap:6px;}}
+
+.ct-essential{table-layout:fixed;}
+.ct-essential :is(th,td){min-width:0;white-space:normal;overflow-wrap:anywhere;padding-inline:10px;}
+.ct-essential :is(th,td):last-child{width:60px;padding-inline:4px;}
+.ct-essential .dw-sort-header{white-space:normal;overflow-wrap:anywhere;}
+
+@container contacts (max-width:679px){.ct-filter-actions [data-slot="button"]{min-height:48px;}}
+
+.ct-analysis-table :is(th,td)[data-align="end"]{text-align:end;}
