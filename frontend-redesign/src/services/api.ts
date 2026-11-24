@@ -1,5 +1,9 @@
 export class ApiError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  public status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
 }
 /** API paths are relative to /api and use the existing HttpOnly session cookie. */
 export interface ApiOptions {
@@ -10,7 +14,15 @@ export interface ApiOptions {
   body?: BodyInit | null;
   headers?: Record<string, string>;
 }
-async function request(path: string, options: ApiOptions = {}): Promise<Response> {
+let sessionGeneration = 0;
+/** Invalidate results from requests started under an earlier login. Does not undo server writes. */
+export function invalidateApiSession() { sessionGeneration++; }
+function assertCurrent(generation: number, signal?: AbortSignal) {
+  if (signal?.aborted || generation !== sessionGeneration) {
+    const error = new Error("Yêu cầu không còn thuộc phiên hiện tại."); error.name = "AbortError"; throw error;
+  }
+}
+async function request(path: string, options: ApiOptions, generation: number): Promise<Response> {
   const { json, signal, method, body, headers } = options;
   if (json !== undefined && body !== undefined) throw new Error("Use either json or body, not both.");
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Invalid API path.");
@@ -21,8 +33,10 @@ async function request(path: string, options: ApiOptions = {}): Promise<Response
     body: json !== undefined ? JSON.stringify(json) : body,
     signal,
   });
+  assertCurrent(generation,signal);
   if (!response.ok) {
     const payload: unknown = await response.json().catch(() => null);
+    assertCurrent(generation,signal);
     if (response.status === 401 && path !== "/auth/login") window.dispatchEvent(new Event("session-expired"));
     let message = `Yêu cầu thất bại (HTTP ${response.status}).`;
     if (payload && typeof payload === "object" && "detail" in payload) {
@@ -34,13 +48,20 @@ async function request(path: string, options: ApiOptions = {}): Promise<Response
   return response;
 }
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  const response = await request(path, options);
+  const generation=sessionGeneration;
+  const response = await request(path, options,generation);
+  assertCurrent(generation,options.signal);
   if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+  const data=await response.json() as T;
+  assertCurrent(generation,options.signal);
+  return data;
 }
 
 /** Same authenticated error handling as JSON API, for file downloads. */
 export async function apiFile(path: string, options: ApiOptions = {}): Promise<Blob> {
-  const response = await request(path, options);
-  return response.blob();
+  const generation=sessionGeneration;
+  const response = await request(path, options,generation);
+  const blob=await response.blob();
+  assertCurrent(generation,options.signal);
+  return blob;
 }
