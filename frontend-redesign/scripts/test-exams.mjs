@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {scopedOptions,scoreText,certificateText,finalText,layoutForWidth} from '../src/features/results/exams/model.ts';
 import {resolveDataset,selectDataset,parseFilters,writeFilters,makePath,filterError,validSort,exactGroupFilter,pageCount,csvFilename} from '../src/features/results/exams/query.ts';
-import {bins,histogram,gradeGroups,sectionRatio} from '../src/features/results/exams/analytics.ts';
+import {bins,histogram,gradeGroups,gradeRoundComparison,sectionRatio} from '../src/features/results/exams/analytics.ts';
 const a={code:'A24',label:'Bảng A',linked:false},b={code:'B95',label:'Bảng B',linked:false},p={code:'PM119',label:'CRM',linked:true};const options={datasets:[a,b],board:['Bảng A'],region:['Miền Bắc'],province:['Hà Nội'],school_type:['THPT'],school:['Trường A','A,B'],grade:['Giỏi','Khá']};
 assert.equal(resolveDataset([a,p],null),p);assert.equal(resolveDataset([a,b],null),a);assert.equal(resolveDataset([a,b],'PM119'),a);assert.equal(resolveDataset([a,b],'B95'),b);assert.equal(resolveDataset([],null),undefined);assert.equal(scopedOptions({viewing_partner:'A',exams:options},'B'),undefined);assert.equal(scopedOptions({viewing_partner:'A',exams:options},'A'),options);assert.equal(scopedOptions({viewing_partner:null},null),undefined);
 const f={board:'Bảng A',paid:'false',certificate:'true',advanced:'false'};const url=writeFilters(new URLSearchParams('dataset=A24&view=analysis&partner=OTHER&q=secret'),f);assert.deepEqual(parseFilters(url),f);assert.equal(url.get('dataset'),'A24');assert.equal(url.get('partner'),null);assert.equal(url.get('q'),null);assert.deepEqual([...selectDataset(url,'B95').entries()],[['dataset','B95'],['view','analysis']]);assert.equal(filterError(f,options),null);assert.ok(filterError({paid:'0'},options));assert.ok(filterError({school:'A,B'},options));assert.ok(filterError({grade:'Yếu'},options));
@@ -9,6 +9,24 @@ const params=x=>new URL(x,'http://localhost').searchParams;const list=params(mak
 assert.equal(scoreText(null),'—');assert.equal(scoreText(0),'0');assert.equal(scoreText(599.9),'599,9');assert.equal(certificateText(true),'Đạt ngưỡng');assert.equal(certificateText(null),'Chưa có dữ liệu');assert.match(finalText({advanced:true,final:null}),/Chưa có điểm/);assert.match(finalText({advanced:false,final:{total:650}}),/không khớp/);
 const h=histogram([{board:'Bảng A',bin:0,count:1},{board:'Bảng A',bin:9,count:2}],5);assert.equal(h.sum,3);assert.equal(h.valid,true);assert.deepEqual(h.values('Bảng A'),[1,0,0,0,0,0,0,0,0,2]);assert.equal(bins[9],'≥ 900');assert.equal(histogram([{board:'A',bin:-1,count:1}],5).valid,false);assert.equal(histogram([{board:'A',bin:1,count:6}],5).valid,false);const g=gradeGroups([{board:'A',round:'qualifier',grade:'Giỏi',count:3},{board:'A',round:'qualifier',grade:'Khác',count:1}],['Giỏi','Khá'])[0];assert.equal(g.total,4);assert.equal(g.grades.at(-1).grade,'Khác');assert.equal(sectionRatio({avg:50,max_score:100,pct:.5}),.5);assert.equal(sectionRatio({avg:0,max_score:100,pct:0}),0);assert.equal(sectionRatio({avg:50,max_score:null,pct:.5}),null);assert.equal(sectionRatio({avg:50,max_score:100,pct:.8}),null);assert.deepEqual([320,679,680,999,1000,1440].map(layoutForWidth),['compact','compact','medium','medium','expanded','expanded']);
 console.log('PASS: scoped dataset resolution, filter and CSV paths, allowlisted sorts, drilldown, null/zero and fractional scores, histogram coverage, grades, section denominators, layout tiers.');
+
+// The all-round view needs a separate denominator for every board and round.
+const compared = gradeRoundComparison([
+  { board: 'Bảng B', round: 'qualifier', grade: 'Khá', count: 6 },
+  { board: 'Bảng A', round: 'final', grade: 'Khác', count: 1 },
+  { board: 'Bảng A', round: 'qualifier', grade: 'Giỏi', count: 8 },
+  { board: 'Bảng A', round: 'qualifier', grade: 'Khá', count: 12 },
+], ['Giỏi', 'Khá']);
+assert.deepEqual(compared.categories, ['Giỏi', 'Khá', 'Khác']);
+assert.deepEqual(compared.groups.map(({ board, round, total }) => [board, round, total]), [
+  ['Bảng A', 'qualifier', 20],
+  ['Bảng A', 'final', 1],
+  ['Bảng B', 'qualifier', 6],
+]);
+assert.deepEqual(compared.groups.map(group => group.grades.map(grade => grade.count)), [[8, 12, 0], [0, 0, 1], [0, 6, 0]]);
+assert.equal(gradeRoundComparison([{ board: 'Bảng A', round: 'final', grade: 'Khá', count: -1 }], []).groups[0].valid, false);
+assert.deepEqual(gradeRoundComparison([], ['Giỏi']).groups, []);
+console.log('PASS: round comparison preserves cohort denominators, missing rounds and unknown grades.');
 
 // V33: grade charts share board roles regardless of the order or filtering.
 const {boardColor,gradeChartable,gradeChartOption}=await import('../src/shared/charts/grade-distribution.ts');

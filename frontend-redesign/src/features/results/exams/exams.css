@@ -23,3 +23,6 @@
 .exm-analysis-pair.exm-grade-pair{grid-template-columns:minmax(0,1fr);}
 
 .exm-data-table :is(th,td)[data-align="end"]{text-align:end;}
+
+.exm-section-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;}
+.exm-section-group{display:grid;align-content:start;gap:12px;min-width:0;padding:12px;border-radius:16px;background:var(--ex-color-surface-container-low);}
