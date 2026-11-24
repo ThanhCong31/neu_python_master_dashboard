@@ -1,0 +1,12 @@
+.gd-root{display:grid;gap:12px;min-width:0;grid-template-columns:minmax(0,1fr);}
+.gd-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px 16px;flex-wrap:wrap;min-width:0;}
+.gd-tools [data-slot="button"]{min-height:44px;margin-inline-start:auto;}
+.gd-scroll{overflow:auto;max-width:100%;border:1px solid var(--ex-color-outline-variant);border-radius:16px;}
+.gd-table{width:100%;border-collapse:collapse;font-size:.875rem;font-variant-numeric:tabular-nums;}
+.gd-table :is(th,td){padding:12px;text-align:center;border-bottom:1px solid var(--ex-color-outline-variant);min-width:84px;}
+.gd-table :is(th,td):first-child{text-align:start;}
+.gd-table thead{background:var(--ex-color-surface-container-high);}
+.gd-table tbody th{font-weight:500;}
+.gd-table tbody tr:last-child>*{border-bottom:0;}
+.gd-table small{display:block;font-size:.8125rem;color:var(--ex-color-on-surface-variant);}
+.gd-root .dashboard-chart-host,.gd-root .dashboard-chart-host>div,.gd-root canvas{touch-action:pan-y!important;}
