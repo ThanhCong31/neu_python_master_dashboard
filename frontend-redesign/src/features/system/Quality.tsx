@@ -1,12 +1,11 @@
 import "./system.css";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { PageRefresh } from "@/shared/PageActions";
 import { useWorkspace } from "@/app/workspace";
 import { SystemSelect } from "./components/SystemSelect";
-import { Button } from "@/components/expressive/button";
 import { useResource } from "@/services/useResource";
 import type { QualityList, QualityRow, QualitySummary } from "./types";
-import { Chip, DataTable, formatDate, formatNumber, Metric, Notice, PageHeading, Pager, Section, State, Tabs, textValue } from "./components/Elements";
+import { Chip, DataTable, formatDate, formatNumber, Metric, Notice, Pager, Section, State, Tabs, textValue } from "./components/Elements";
 
 type Tab = "issues" | "duplicates" | "import";
 const PAGE_SIZE = 15;
@@ -16,12 +15,13 @@ function query(path: string, params: Record<string, string | number | null>) {
   return `${path}?${search.toString()}`;
 }
 function Distribution({ data }: { data: Array<{label:string; count:number}> }) {
+  const valid = data.every(x=>Number.isSafeInteger(x.count)&&x.count>=0);
   const max = Math.max(1, ...data.map(x=>x.count));
-  return <div className="sys-bars">{data.length ? data.map(({label,count}) => <div className="sys-bar" key={label}>
+  return <div className="sys-bars">{!valid&&<p role="alert" className="sys-muted">Số đếm không hợp lệ; chỉ hiển thị số liệu nguồn.</p>}{data.length ? data.map(({label,count}) => <div className="sys-bar" key={label}>
     <div className="sys-bar-head"><span title={label}>{label}</span><strong>{formatNumber(count)}</strong></div>
-    <div className="sys-bar-track" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={count}>
-      <div className="sys-bar-fill" style={{width:`${count===0?0:Math.max(2,count/max*100)}%`}} />
-    </div>
+    {valid&&<div className="sys-bar-track" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={count}>
+      <div className="sys-bar-fill" style={{width:`${count/max*100}%`}} />
+    </div>}
   </div>) : <p className="sys-muted">Không có dữ liệu trong phạm vi này.</p>}</div>;
 }
 function totals<T extends {count:number}>(rows: T[], name: (r:T)=>string) {
@@ -29,7 +29,7 @@ function totals<T extends {count:number}>(rows: T[], name: (r:T)=>string) {
   for (const row of rows) entries.set(name(row), (entries.get(name(row)) ?? 0) + row.count);
   return [...entries].map(([label,count])=>({label,count})).sort((a,b)=>b.count-a.count);
 }
-function Logs({ kind, partner, summary, refreshSignal }: {kind:"issues"|"duplicates";partner:string|null;summary:QualitySummary;refreshSignal:number}) {
+function Logs({ kind, partner, summary, refreshSignal, onBusy }: {kind:"issues"|"duplicates";partner:string|null;summary:QualitySummary;refreshSignal:number;onBusy:(busy:boolean)=>void}) {
   const [page,setPage]=useState(1);
   const [source,setSource]=useState("");
   const [issue,setIssue]=useState("");
@@ -38,6 +38,7 @@ function Logs({ kind, partner, summary, refreshSignal }: {kind:"issues"|"duplica
   const sources = [...new Set(dimensions.map(x=>x.source).filter(Boolean))].sort();
   const issueLabels = [...new Set(dimensions.map(x=>"issue" in x ? x.issue : x.reason).filter(Boolean))].sort();
   const resource = useResource<QualityList>(query("/quality/list", {kind,partner,page,page_size:PAGE_SIZE,source,issue}));
+  useEffect(()=>{onBusy(resource.state==="loading"||resource.refreshing);return()=>onBusy(false);},[resource.state,resource.refreshing,onBusy]);
   const lastRefresh = useRef(refreshSignal);
   useEffect(() => {
     if (refreshSignal === lastRefresh.current) return;
@@ -60,13 +61,13 @@ function Logs({ kind, partner, summary, refreshSignal }: {kind:"issues"|"duplica
       <DataTable<QualityRow> rows={rows} rowKey={(r,i)=>`${textValue(r.source)}-${textValue(r.row_no)}-${i}`} columns={kind==="issues" ? [
         {key:"issue",heading:"Loại vấn đề",get:r=><strong>{textValue(r.issue_type)}</strong>},
         {key:"source",heading:"Nguồn",get:r=>textValue(r.source)},
-        {key:"row",heading:"Dòng",get:r=>textValue(r.row_no)},
+        {key:"row",align:"center",heading:"Dòng",get:r=>textValue(r.row_no)},
         {key:"contact",heading:"Hồ sơ",get:r=>textValue(r.contact_id)},
         {key:"before",heading:"Trước chuẩn hóa",get:r=>textValue(r.value_before)},
         {key:"after",heading:"Sau chuẩn hóa",get:r=>textValue(r.value_after)},
       ] : [
         {key:"source",heading:"Nguồn",get:r=>textValue(r.source)},
-        {key:"row",heading:"Dòng",get:r=>textValue(r.row_no)},
+        {key:"row",align:"center",heading:"Dòng",get:r=>textValue(r.row_no)},
         {key:"contact",heading:"Gộp vào",get:r=>textValue(r.contact_id)},
         {key:"name",heading:"Tên gốc",get:r=>textValue(r.full_name_raw)},
         {key:"email",heading:"Email gốc",get:r=>textValue(r.email_raw)},
@@ -88,20 +89,21 @@ function Imports({summary}:{summary:QualitySummary}) {
       {key:"check",heading:"Kiểm tra",get:r=>r.check},
       {key:"actual",heading:"Thực tế",get:r=>textValue(r.actual)},
       {key:"expected",heading:"Dự kiến",get:r=>textValue(r.expected)},
-      {key:"ok",heading:"Kết quả",get:r=><Chip kind={r.ok?"good":"bad"}>{r.ok?"Khớp":"Lệch"}</Chip>}
+      {key:"ok",align:"center",heading:"Kết quả",get:r=><Chip kind={r.ok?"good":"bad"}>{r.ok?"Khớp":"Lệch"}</Chip>}
     ]}/>
     <h3 className="sys-subheading">File đầu vào</h3>
     <DataTable rows={files} rowKey={(r,i)=>`${r.name}-${i}`} columns={[
       {key:"name",heading:"Tên file",get:r=>r.name},
-      {key:"size",heading:"Kích thước",get:r=>`${formatNumber(Math.round(r.size/1024))} KB`},
+      {key:"size",align:"end",heading:"Kích thước",get:r=>`${formatNumber(Math.round(r.size/1024))} KB`},
       {key:"sha",heading:"SHA-256 (rút gọn)",get:r=><code>{r.sha256?.slice(0,20) ?? "—"}</code>},
     ]}/>
   </div>;
 }
-export default function Quality() {
+function ScopedQuality() {
   const {partner,user}=useWorkspace();
   const [tab,setTab]=useState<Tab>("issues");
   const [refreshSignal,setRefreshSignal]=useState(0);
+  const [logsBusy,setLogsBusy]=useState(false);
   const url=query("/quality/summary",{partner});
   const resource=useResource<QualitySummary>(url);
   const data=resource.state==="ready"?resource.data:null;
@@ -112,7 +114,8 @@ export default function Quality() {
   const issues=useMemo(()=>totals(data?.by_issue ?? [],r=>r.issue),[data]);
   const reasons=useMemo(()=>totals(data?.by_reason ?? [],r=>r.reason),[data]);
   return <div className="sys-page">
-    <PageHeading title="Chất lượng dữ liệu" description="Theo dõi chuẩn hóa, gộp trùng và truy vết dữ liệu nguồn." action={<Button variant="tonal" icon={<RefreshCw/>} onClick={()=>{resource.retry();setRefreshSignal(n=>n+1);}}>Cập nhật dữ liệu</Button>} />
+    <PageRefresh busy={resource.state==="loading"||resource.refreshing||logsBusy} onRefresh={()=>{resource.retry();setRefreshSignal(n=>n+1);}}/>
+    <p className="sys-muted">Theo dõi chuẩn hóa, gộp trùng và truy vết dữ liệu nguồn.</p>
     <State status={resource.state} refreshError={resource.refreshError} error={resource.state==="error"?resource.message:undefined} retry={resource.retry}>
       {data && <>
         <Notice>{isAdmin && partner===null ? "Các thống kê nhật ký đang ở phạm vi toàn hệ thống." : "Đang xem phạm vi đối tác. Thống kê pipeline và lịch sử nhập toàn hệ thống được ẩn để tránh so sánh sai phạm vi."} Dữ liệu cá nhân được API che theo quyền tài khoản.</Notice>
@@ -145,11 +148,17 @@ export default function Quality() {
           <Tabs<Tab> panelId="system-quality-panel" value={tab} onChange={setTab} options={[
             {value:"issues",label:"Chuẩn hóa"},{value:"duplicates",label:"Gộp trùng"},...(isAdmin && partner === null ? [{value:"import" as const,label:"Lần nhập gần nhất"}] : [])
           ]}/>
-          <div id="system-quality-panel" className="sys-tab-panel" key={`${tab}-${partner ?? "all"}`} role="tabpanel" tabIndex={0} aria-label={tab === "issues" ? "Chuẩn hóa" : tab === "duplicates" ? "Gộp trùng" : "Lần nhập gần nhất"}>
-            {tab==="import" && isAdmin && partner === null ? <Imports summary={data}/> : <Logs kind={tab==="duplicates"?"duplicates":"issues"} partner={partner} summary={data} refreshSignal={refreshSignal}/>} 
+          <div id="system-quality-panel" className="sys-tab-panel" key={`${tab}-${partner ?? "all"}`} role="tabpanel" tabIndex={0} aria-labelledby={`system-quality-panel-tab-${tab}`}>
+            {tab==="import" && isAdmin && partner === null ? <Imports summary={data}/> : <Logs kind={tab==="duplicates"?"duplicates":"issues"} partner={partner} summary={data} refreshSignal={refreshSignal} onBusy={setLogsBusy}/>}
           </div>
         </Section>
       </>}
     </State>
   </div>;
+}
+
+export default function Quality(){
+  const {user,partner,scopeStatus,retryScope}=useWorkspace();
+  if(scopeStatus!=="ready")return <div className="sys-page"><State status={scopeStatus} error="Không xác nhận được phạm vi dữ liệu." retry={retryScope}/></div>;
+  return <ScopedQuality key={JSON.stringify([user.username,user.role,user.partner_code,partner,user.can_view_pii])}/>;
 }

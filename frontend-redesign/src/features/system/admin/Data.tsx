@@ -1,6 +1,7 @@
 import { SystemSelect } from "../components/SystemSelect";
-import { useRef, useState, type ChangeEvent } from "react";
-import { Database, RefreshCw, RotateCcw, UploadCloud } from "lucide-react";
+import { useLayoutEffect, useRef, useState, type ChangeEvent } from "react";
+import { Database, RotateCcw, UploadCloud } from "lucide-react";
+import { RefreshButton } from "@/shared/PageActions";
 import { Button } from "@/components/expressive/button";
 import { api } from "@/services/api";
 import { useResource } from "@/services/useResource";
@@ -12,7 +13,7 @@ const FILES=[
 ] as const;
 const MAX_BYTES=20*1024*1024; // UX bound only; enforce backend max request size separately.
 interface Result {ok:boolean;message:string;counts:Record<string,number>}
-export default function DataManagement(){
+export default function DataManagement({onBusyChange}:{onBusyChange?:(busy:boolean)=>void}={}){
   const status=useResource<DataCounts>("/admin/data-status");
   const history=useResource<ImportRun[]>("/admin/imports");
   const [target,setTarget]=useState<string>(FILES[0].value);
@@ -21,6 +22,7 @@ export default function DataManagement(){
   const [dialog,setDialog]=useState<"reload"|"upload"|null>(null);
   const [confirmation,setConfirmation]=useState("");
   const [busy,setBusy]=useState(false);
+  useLayoutEffect(()=>{onBusyChange?.(busy);return()=>onBusyChange?.(false);},[busy,onBusyChange]);
   const [error,setError]=useState("");
   const [success,setSuccess]=useState("");
   const counts=status.state==="ready"?status.data:null;
@@ -36,7 +38,7 @@ export default function DataManagement(){
   }
   const confirmationWord = dialog === "upload" ? "THAY THE" : "NAP LAI";
   async function execute(){
-    if(!dialog||confirmation!==confirmationWord)return;
+    if(busy||!dialog||confirmation!==confirmationWord)return;
     setBusy(true);setError("");
     try{
       let result:Result;
@@ -44,7 +46,7 @@ export default function DataManagement(){
       else {
         if(!file)throw new Error("Không có file tải lên.");
         // Only a hardcoded server target is sent; never the local filename.
-        result=await api<Result>(`/admin/upload-file?filename=${encodeURIComponent(target)}`,{method:"POST",body:await file.arrayBuffer(),headers:{"Content-Type":"application/octet-stream"}});
+        result=await api<Result>(`/admin/upload-file?filename=${encodeURIComponent(target)}`,{method:"POST",body:file,headers:{"Content-Type":"application/octet-stream"}});
       }
       if (!result.ok) throw new Error("Máy chủ chưa xác nhận xử lý dữ liệu.");
       setSuccess(`${result.message} · Contacts ${formatNumber(result.counts.contacts)} · Leads ${formatNumber(result.counts.leads)} · Thí sinh ${formatNumber(result.counts.candidates)}`);
@@ -55,7 +57,7 @@ export default function DataManagement(){
   return <div className="sys-stack">
     <Notice>Hai tác vụ bên dưới chạy ETL trên máy chủ và có thể ghi lại dữ liệu trong MongoDB. Đây là thao tác thật, không có chế độ xem trước (dry-run) ở API hiện tại. Hãy sao lưu dữ liệu trước khi thực hiện.</Notice>
     {error&&<Notice error>{error}</Notice>}{success&&<Notice success>{success}</Notice>}
-    <Section title="Trạng thái dữ liệu" description="Số bản ghi hiện có trong MongoDB (toàn hệ thống)." actions={<Button variant="text" icon={<RefreshCw/>} onClick={()=>{status.retry();history.retry();}}>Cập nhật số liệu</Button>}>
+    <Section title="Trạng thái dữ liệu" description="Số bản ghi hiện có trong MongoDB (toàn hệ thống)." actions={<RefreshButton busy={status.state==="loading"||history.state==="loading"||status.refreshing||history.refreshing} disabled={busy} onRefresh={()=>{status.retry();history.retry();}} label="Làm mới trạng thái và lịch sử dữ liệu"/>}>
       <State status={status.state} refreshError={status.refreshError} error={status.state==="error"?status.message:undefined} retry={status.retry}>
         {counts && <div className="sys-metrics sys-metrics--inside">
           <Metric label="Liên hệ CRM" value={formatNumber(counts.contacts)}/>
@@ -87,9 +89,9 @@ export default function DataManagement(){
         {history.state==="ready"&&<DataTable rows={history.data} rowKey={(r,i)=>`${r.started_at??"import"}-${i}`} columns={[
           {key:"started",heading:"Bắt đầu",get:r=>formatDate(r.started_at)},
           {key:"ended",heading:"Kết thúc",get:r=>formatDate(r.finished_at)},
-          {key:"result",heading:"Kết quả",get:r=><Chip kind={r.ok?"good":"bad"}>{r.ok?"Thành công":"Có lỗi"}</Chip>},
+          {key:"result",align:"center",heading:"Kết quả",get:r=><Chip kind={r.ok?"good":"bad"}>{r.ok?"Thành công":"Có lỗi"}</Chip>},
           {key:"files",heading:"Nguồn",get:r=>(r.files??[]).map(f=>f.name).join(", ")||"—"},
-          {key:"checks",heading:"Kiểm tra",get:r=>`${(r.checks??[]).filter(c=>c.ok).length}/${(r.checks??[]).length} khớp`},
+          {key:"checks",align:"center",heading:"Kiểm tra",get:r=>`${(r.checks??[]).filter(c=>c.ok).length}/${(r.checks??[]).length} khớp`},
         ]}/>}
       </State>
     </Section>

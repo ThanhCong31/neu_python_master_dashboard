@@ -1,6 +1,6 @@
 import { SystemSelect } from "../components/SystemSelect";
-import { useMemo, useState, type FormEvent } from "react";
-import { LockKeyhole, Plus, UserRoundPen } from "lucide-react";
+import { useLayoutEffect, useMemo, useState, type FormEvent } from "react";
+import { LockKeyhole, Plus, Search, UserRoundPen } from "lucide-react";
 import { Button } from "@/components/expressive/button";
 import { TextField } from "@/components/expressive/text-field";
 import { useWorkspace } from "@/app/workspace";
@@ -12,7 +12,7 @@ import { Chip, DataTable, Dialog, formatDate, Notice, Section, State } from "../
 type Editor = { type:"create" } | { type:"edit"; user:AdminUser } | {type:"password";user:AdminUser} | {type:"status";user:AdminUser};
 const validUsername = /^[a-z0-9._-]{3,32}$/;
 function errorText(e:unknown) { return e instanceof Error ? e.message : "Thao tác thất bại. Vui lòng thử lại."; }
-function UserEditor({mode,partners,done,onClose}:{mode:{type:"create"}|{type:"edit";user:AdminUser};partners:PartnersResult;done:(message:string)=>void;onClose:()=>void}) {
+function UserEditor({mode,partners,done,onClose,onBusyChange}:{mode:{type:"create"}|{type:"edit";user:AdminUser};partners:PartnersResult;done:(message:string)=>void;onClose:()=>void;onBusyChange?:(busy:boolean)=>void}) {
   const original=mode.type==="edit"?mode.user:null;
   const [username,setUsername]=useState("");
   const [name,setName]=useState(original?.full_name??"");
@@ -20,10 +20,11 @@ function UserEditor({mode,partners,done,onClose}:{mode:{type:"create"}|{type:"ed
   const [partner,setPartner]=useState(original?.partner_code??partners.partners[0]?.code??"");
   const [password,setPassword]=useState("");
   const [busy,setBusy]=useState(false);
+  useLayoutEffect(()=>{onBusyChange?.(busy);return()=>onBusyChange?.(false);},[busy,onBusyChange]);
   const [error,setError]=useState("");
   const edit=!!original;
   async function submit(e:FormEvent) {
-    e.preventDefault();setError("");
+    e.preventDefault();if(busy)return;setError("");
     if (!edit && !validUsername.test(username)) {setError("Tên đăng nhập chỉ gồm chữ thường, số và . _ - (3–32 ký tự).");return;}
     if (!name.trim()) {setError("Họ tên hoặc đơn vị không được để trống.");return;}
     if (role==="partner" && !partner) {setError("Vui lòng chọn đối tác.");return;}
@@ -60,17 +61,19 @@ function UserEditor({mode,partners,done,onClose}:{mode:{type:"create"}|{type:"ed
     <form onSubmit={submit} className="sys-form" aria-busy={busy}>
       {!edit && <TextField label="Tên đăng nhập" value={username} onChange={e=>setUsername(e.target.value)} required minLength={3} maxLength={32} autoComplete="off"/>}
       <TextField label="Họ tên / đơn vị" value={name} onChange={e=>setName(e.target.value)} required minLength={1} maxLength={120}/>
-      <SystemSelect label="Vai trò" labelBackground="var(--ex-color-surface-container-high)" value={role} disabled={edit} options={[{value:"partner",label:"Đối tác"},{value:"admin",label:"Quản trị viên"}]} onChange={value=>setRole(value as "admin"|"partner")}/>
-      {role==="partner" && <SystemSelect label="Đối tác" labelBackground="var(--ex-color-surface-container-high)" value={partner} options={partners.partners.map(p=>({value:p.code,label:`${p.code} · ${p.name}`}))} onChange={setPartner} />}
+      <SystemSelect native label="Vai trò" labelBackground="var(--ex-color-surface-container-high)" value={role} disabled={edit} options={[{value:"partner",label:"Đối tác"},{value:"admin",label:"Quản trị viên"}]} onChange={value=>setRole(value as "admin"|"partner")}/>
+      {role==="partner" && <SystemSelect native label="Đối tác" labelBackground="var(--ex-color-surface-container-high)" value={partner} options={partners.partners.map(p=>({value:p.code,label:`${p.code} · ${p.name}`}))} onChange={setPartner} />}
       {!edit && <TextField label="Mật khẩu ban đầu" type="password" value={password} onChange={e=>setPassword(e.target.value)} minLength={8} maxLength={128} autoComplete="new-password" required supportingText="Tối thiểu 8 ký tự, kết hợp chữ và số hoặc ký tự đặc biệt."/>}
       {error && <Notice error>{error}</Notice>}
       <div className="sys-dialog-actions"><Button type="button" variant="text" disabled={busy} onClick={onClose}>Hủy</Button><Button type="submit" disabled={busy}>{busy?"Đang lưu…":edit?"Lưu thay đổi":"Tạo tài khoản"}</Button></div>
     </form>
   </Dialog>;
 }
-function PasswordReset({user,done,onClose}:{user:AdminUser;done:(s:string)=>void;onClose:()=>void}){
-  const [password,setPassword]=useState("");const [confirm,setConfirm]=useState("");const [busy,setBusy]=useState(false);const [error,setError]=useState("");
-  async function submit(e:FormEvent){e.preventDefault();setError("");if(password!==confirm){setError("Hai mật khẩu không khớp.");return;}setBusy(true);
+function PasswordReset({user,done,onClose,onBusyChange}:{user:AdminUser;done:(s:string)=>void;onClose:()=>void;onBusyChange?:(busy:boolean)=>void}){
+  const [password,setPassword]=useState("");const [confirm,setConfirm]=useState("");const [busy,setBusy]=useState(false);
+  useLayoutEffect(()=>{onBusyChange?.(busy);return()=>onBusyChange?.(false);},[busy,onBusyChange]);
+  const [error,setError]=useState("");
+  async function submit(e:FormEvent){e.preventDefault();if(busy)return;setError("");if(password!==confirm){setError("Hai mật khẩu không khớp.");return;}setBusy(true);
     try{const result=await api<{ok:boolean}>(`/admin/users/${encodeURIComponent(user.username)}/reset-password`,{method:"POST",json:{password}});
       if(!result.ok) throw new Error("Máy chủ chưa xác nhận đặt lại mật khẩu.");
       done(`Đã đặt lại mật khẩu cho @${user.username}; các phiên cũ đã hết hiệu lực.`);}
@@ -84,9 +87,11 @@ function PasswordReset({user,done,onClose}:{user:AdminUser;done:(s:string)=>void
     </form>
   </Dialog>;
 }
-function StatusChange({user,done,onClose}:{user:AdminUser;done:(s:string)=>void;onClose:()=>void}){
-  const [busy,setBusy]=useState(false);const [error,setError]=useState("");const next=!user.active;
-  async function submit(){setBusy(true);setError("");try{const result=await api<AdminUser>(`/admin/users/${encodeURIComponent(user.username)}`,{method:"PATCH",json:{active:next}});
+function StatusChange({user,done,onClose,onBusyChange}:{user:AdminUser;done:(s:string)=>void;onClose:()=>void;onBusyChange?:(busy:boolean)=>void}){
+  const [busy,setBusy]=useState(false);
+  useLayoutEffect(()=>{onBusyChange?.(busy);return()=>onBusyChange?.(false);},[busy,onBusyChange]);
+  const [error,setError]=useState("");const next=!user.active;
+  async function submit(){if(busy)return;setBusy(true);setError("");try{const result=await api<AdminUser>(`/admin/users/${encodeURIComponent(user.username)}`,{method:"PATCH",json:{active:next}});
       if(result.active!==next) throw new Error("Máy chủ chưa xác nhận thay đổi trạng thái tài khoản.");
       done(`Đã ${next?"mở khóa":"khóa"} @${user.username}.`);}catch(err){setError(errorText(err));}finally{setBusy(false);}}
   return <Dialog dismissible={!busy} title={`${next?"Mở khóa":"Khóa"} tài khoản @${user.username}?`} description={next?"Tài khoản sẽ có thể đăng nhập trở lại.":"Tài khoản sẽ không thể đăng nhập và các phiên hiện có bị vô hiệu hóa."} onClose={onClose}>
@@ -94,7 +99,7 @@ function StatusChange({user,done,onClose}:{user:AdminUser;done:(s:string)=>void;
     <div className="sys-dialog-actions"><Button variant="text" disabled={busy} onClick={onClose}>Hủy</Button><Button disabled={busy} onClick={submit}>{busy?"Đang cập nhật…":next?"Xác nhận mở khóa":"Xác nhận khóa"}</Button></div>
   </Dialog>;
 }
-export default function Users(){
+export default function Users({onBusyChange}:{onBusyChange?:(busy:boolean)=>void}={}){
   const {user:current}=useWorkspace();
   const users=useResource<AdminUser[]>("/admin/users");
   const partners=useResource<PartnersResult>("/admin/partners");
@@ -109,14 +114,14 @@ export default function Users(){
     actions={<Button icon={<Plus/>} onClick={()=>setEditor({type:"create"})} disabled={!partnerList}>Tạo tài khoản</Button>}>
     <div className="sys-stack">
       {notice && <Notice success>{notice}</Notice>}
-      <div className="sys-toolbar"><label className="sys-search">Tìm tài khoản<input className="sys-input" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Tên đăng nhập, họ tên, mã đối tác" type="search"/></label></div>
+      <div className="sys-toolbar"><TextField className="sys-account-search" variant="search" label="Tên đăng nhập, họ tên, mã đối tác" leadingIcon={<Search aria-hidden="true"/>} value={search} onChange={e=>setSearch(e.target.value)} type="search"/></div>
       {partners.state==="error" && <Notice error>Không thể tải danh sách đối tác: {partners.message} <Button size="xs" variant="outlined" onClick={partners.retry}>Thử lại</Button></Notice>}
       <State status={users.state} refreshError={users.refreshError} error={users.state==="error"?users.message:undefined} retry={users.retry}>
         <DataTable rows={filtered} rowKey={u=>u.username} columns={[
           {key:"username",heading:"Tài khoản",get:u=><><strong>@{u.username}</strong><span className="sys-table-secondary">{u.full_name}</span></>},
-          {key:"role",heading:"Vai trò",get:u=><Chip kind={u.role==="admin"?"accent":"neutral"}>{u.role==="admin"?"Quản trị":"Đối tác"}</Chip>},
+          {key:"role",align:"center",heading:"Vai trò",get:u=><Chip kind={u.role==="admin"?"accent":"neutral"}>{u.role==="admin"?"Quản trị":"Đối tác"}</Chip>},
           {key:"partner",heading:"Đối tác",get:u=>u.partner_code ? `${u.partner_code} · ${partnerList?.partners.find(p=>p.code===u.partner_code)?.name??u.partner_code}` : "—"},
-          {key:"status",heading:"Trạng thái",get:u=><Chip kind={u.active?"good":"bad"}>{u.active?"Hoạt động":"Đã khóa"}</Chip>},
+          {key:"status",align:"center",heading:"Trạng thái",get:u=><Chip kind={u.active?"good":"bad"}>{u.active?"Hoạt động":"Đã khóa"}</Chip>},
           {key:"last",heading:"Đăng nhập gần nhất",get:u=>formatDate(u.last_login)},
           {key:"actions",heading:"Thao tác",get:u=><div className="sys-actions sys-actions--wrap">
             <Button variant="text" size="sm" icon={<UserRoundPen/>} onClick={()=>setEditor({type:"edit",user:u})} disabled={!partnerList}>Sửa</Button>
@@ -126,9 +131,9 @@ export default function Users(){
         ]}/>
       </State>
     </div>
-    {editor?.type==="create" && partnerList && <UserEditor mode={editor} partners={partnerList} onClose={()=>setEditor(null)} done={done}/>}
-    {editor?.type==="edit" && partnerList && <UserEditor mode={editor} partners={partnerList} onClose={()=>setEditor(null)} done={done}/>}
-    {editor?.type==="password" && <PasswordReset user={editor.user} onClose={()=>setEditor(null)} done={done}/>}
-    {editor?.type==="status" && <StatusChange user={editor.user} onClose={()=>setEditor(null)} done={done}/>}
+    {editor?.type==="create" && partnerList && <UserEditor mode={editor} partners={partnerList} onClose={()=>setEditor(null)} done={done} onBusyChange={onBusyChange}/>}
+    {editor?.type==="edit" && partnerList && <UserEditor mode={editor} partners={partnerList} onClose={()=>setEditor(null)} done={done} onBusyChange={onBusyChange}/>}
+    {editor?.type==="password" && <PasswordReset user={editor.user} onClose={()=>setEditor(null)} done={done} onBusyChange={onBusyChange}/>}
+    {editor?.type==="status" && <StatusChange user={editor.user} onClose={()=>setEditor(null)} done={done} onBusyChange={onBusyChange}/>}
   </Section>;
 }

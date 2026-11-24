@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, CheckCheck, ChevronRight, RotateCcw, Save, Search, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/expressive/button";
 import { useWorkspace } from "@/app/workspace";
@@ -31,7 +31,7 @@ function Option({ checked, onChange, title, supporting, disabled = false }: {
   </label>;
 }
 
-export default function Partners({ onDirtyChange }: { onDirtyChange?: (dirty: boolean) => void }) {
+export default function Partners({ onDirtyChange, onBusyChange }: { onDirtyChange?: (dirty: boolean) => void; onBusyChange?: (busy:boolean)=>void }) {
   const { user } = useWorkspace();
   const selectionKey = `neu-admin-selected:${user.username}`;
   const remote = useResource<PartnersResult>("/admin/partners");
@@ -58,7 +58,8 @@ export default function Partners({ onDirtyChange }: { onDirtyChange?: (dirty: bo
   const active = list.find((p) => p.code === selected) ?? list[0];
   const draft = active && editing?.code === active.code ? editing.value : active ? toDraft(active) : null;
   const dirty = Boolean(active && draft && !same(toDraft(active), draft));
-  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
+  useLayoutEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
+  useLayoutEffect(()=>{onBusyChange?.(saving);return()=>onBusyChange?.(false);},[saving,onBusyChange]);
   useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   const differences = active && draft ? changes(active, draft, data?.modules ?? {}) : [];
 

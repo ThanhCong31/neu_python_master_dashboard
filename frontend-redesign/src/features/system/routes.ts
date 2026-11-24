@@ -13,7 +13,8 @@ export const quality: Destination = {
 export const admin: Destination = {
   id: "admin",
   path: "/quan-tri",
-  label: "Quản trị",
+  label: "Quản trị hệ thống",
+  navLabel: "Quản trị",
   group: "Hệ thống",
   Screen: Admin,
 };

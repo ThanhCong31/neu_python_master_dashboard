@@ -1,8 +1,8 @@
 import { SystemSelect } from "../components/SystemSelect";
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { TextField } from "@/components/expressive/text-field";
-import { Button } from "@/components/expressive/button";
+import { RefreshButton } from "@/shared/PageActions";
 import { useResource } from "@/services/useResource";
 import type { AuditEvent } from "../types";
 import { Chip, DataTable, formatDate, Notice, Pager, Section, State } from "../components/Elements";
@@ -33,19 +33,19 @@ export default function Audit(){
     if (page > last) setPage(last);
   }, [page, rows.length]);
   const current=rows.slice((page-1)*PAGE,page*PAGE);
-  return <Section title="Nhật ký truy cập" description="200 sự kiện gần đây nhất từ máy chủ. Bộ lọc bên dưới áp dụng trên 200 sự kiện này." actions={<Button variant="text" icon={<RefreshCw/>} onClick={data.retry}>Làm mới</Button>}>
+  return <Section title="Nhật ký truy cập" description="200 sự kiện gần đây nhất từ máy chủ. Bộ lọc bên dưới áp dụng trên 200 sự kiện này." actions={<RefreshButton busy={data.state==="loading"||data.refreshing} onRefresh={data.retry} label="Làm mới nhật ký"/>}>
     <div className="sys-stack">
       <div className="sys-filters sys-filters--three">
         <SystemSelect labelPlacement="above" label="Hành động" value={action} allLabel="Tất cả hành động" options={actions.map(a=>({value:a,label:ACTIONS[a]??a}))} onChange={value=>{setAction(value);setPage(1);}} />
         <SystemSelect labelPlacement="above" label="Kết quả" value={status} allLabel="Tất cả kết quả" options={[{value:"ok",label:"Thành công"},{value:"fail",label:"Thất bại"}]} onChange={value=>{setStatus(value);setPage(1);}} />
-        <TextField label="Tài khoản / IP" labelPlacement="above" labelBackground="var(--ex-color-surface-container-low)" variant="outlined" leadingIcon={<Search aria-hidden="true"/>} value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} type="search" placeholder="Tên tài khoản hoặc địa chỉ IP" />
+        <TextField variant="search" label="Tài khoản / IP" leadingIcon={<Search aria-hidden="true"/>} value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} type="search" placeholder="Tên tài khoản hoặc địa chỉ IP" />
       </div>
       <State status={data.state} refreshError={data.refreshError} error={data.state==="error"?data.message:undefined} retry={data.retry}>
         <DataTable rows={current} rowKey={(r,i)=>`${r.at}-${r.action}-${i}`} columns={[
           {key:"at",heading:"Thời điểm",get:r=>formatDate(r.at)},
           {key:"action",heading:"Hành động",get:r=><strong>{ACTIONS[r.action]??r.action}</strong>},
           {key:"user",heading:"Tài khoản",get:r=>r.username?`@${r.username}`:"—"},
-          {key:"result",heading:"Kết quả",get:r=><Chip kind={r.ok?"good":"bad"}>{r.ok?"Thành công":"Thất bại"}</Chip>},
+          {key:"result",align:"center",heading:"Kết quả",get:r=><Chip kind={r.ok?"good":"bad"}>{r.ok?"Thành công":"Thất bại"}</Chip>},
           {key:"ip",heading:"IP",get:r=>r.ip??"—"},
           {key:"detail",heading:"Chi tiết",get:r=><AuditDetails detail={r.detail??{}}/>}
         ]}/>
