@@ -10,6 +10,7 @@ export default function Account() {
   const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
     const form = event.currentTarget;
     const values = new FormData(form);
     if (values.get("repeat") !== values.get("new_password")) {
@@ -37,7 +38,6 @@ export default function Account() {
   }
   return (
     <section className="max-w-lg space-y-6">
-      <h1 className="text-headline-medium font-semibold">Tài khoản</h1>
       <div>
         <h2 className="text-title-large">{user.full_name}</h2>
         <p className="text-body-medium text-on-surface-variant">

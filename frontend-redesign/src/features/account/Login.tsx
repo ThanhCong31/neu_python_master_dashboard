@@ -12,6 +12,7 @@ export function Login({ accept }: { accept: (user: User) => void }) {
   const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
     const values = new FormData(event.currentTarget);
     setError("");
     setBusy(true);
