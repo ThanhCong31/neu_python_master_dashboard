@@ -6,6 +6,7 @@ export const contacts: Destination = {
   id: "contacts",
   path: "/crm",
   label: "Liên hệ & chuyển đổi",
+  navLabel: "Liên hệ",
   group: "Tuyển sinh",
   Screen: Contacts,
 };
