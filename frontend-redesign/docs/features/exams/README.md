@@ -2,7 +2,7 @@
 
 > Hồ sơ thiết kế theo baseline lịch sử; xem [design review](exams-design-review.md) và [lịch sử triển khai](../../history/README.md) để biết các quyết định sau audit.
 
-Trạng thái: Research & Planning, chưa triển khai. Baseline V29: workspace `/mnt/data/design-system-work/frontend-redesign` có V28 commit 49c5aaf và diff V29. Không giả định bản trên GitHub đã đồng bộ. Trước coding đối chiếu baseline user, AGENTS/CONTRIBUTING, V20/V28/V29, quy chuẩn Contacts/Leads. Không sửa feature đồng đội, backend hoặc dữ liệu.
+Bản hiện hành đã triển khai bảng điểm và phân tích. Khối **Xếp loại & phần thi** mặc định hiển thị **Cả hai vòng** theo từng bảng và vòng, với tùy chọn xem riêng **Vòng loại** hoặc **Chung kết**. Xem [lịch sử sau V38](../../history/README.md#sau-v38). Các tài liệu bên dưới ghi quyết định theo baseline V29.
 
 ## Thứ tự đọc
 1. [exams-issues.md](exams-issues.md) — audit frontend main và giới hạn backend.

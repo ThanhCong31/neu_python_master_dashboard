@@ -24,11 +24,11 @@ Chạy backend FastAPI hiện có trên cổng 8000 với MongoDB và tài kho�
 - Khi API trả 401, quay về đăng nhập. Khi máy chủ lỗi hoặc mất kết nối, hiện nút thử lại.
 - Danh sách route và menu được lọc theo `user.modules`. Quản trị yêu cầu thêm vai trò admin.
 - Admin lấy đối tác từ `GET /api/meta/options`; chọn phạm vi và giữ khi chuyển trang.
-- Tài khoản có đổi mật khẩu qua `POST /api/auth/change-password`.
+- Tài khoản có đổi mật khẩu qua `POST /api/auth/change-password` và hiển thị quyền của phiên đăng nhập dựa trên danh sách màn đã cấp.
 - Gửi cookie phiên cùng origin. Frontend không lưu mật khẩu hay token vào localStorage.
 - Backend tiếp tục quyết định quyền trên từng request.
 
-Tổng quan, Liên hệ & chuyển đổi, Lead từ biểu mẫu, Kết quả thi, Chất lượng dữ liệu, Quản trị, Đăng nhập và Tài khoản đã có implementation API. Truyền thông và Nhà tài trợ thuộc nhánh của đồng đội; chưa nằm trong nghiệm thu V38. Xem [V37](../history/REDESIGN-V37.md) để biết điều kiện còn mở trước release. Điểm thi là dữ liệu giả lập, không dùng để công bố hoặc đánh giá cá nhân.
+Truyền thông và Nhà tài trợ đã tích hợp qua PR #1. Xem [lịch sử sau V38](../history/README.md#sau-v38) và [release checklist](../final-review/release-checklist.md). Điểm thi là dữ liệu giả lập, không dùng để công bố hoặc đánh giá cá nhân.
 
 ## Kiểm thử và build
 

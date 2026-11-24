@@ -28,3 +28,9 @@ Các ghi chú triển khai gốc được lưu ở đây thay vì rải ở root
 | [V34](REDESIGN-V34-CHART-REVIEW.md) | V34 — Chart consistency & pre-final review |
 | [V37](REDESIGN-V37.md) | V35–V37 — Final refinement, candidate for local verification |
 | [V38](REDESIGN-V38-LOADING.md) | V38 — Loading indicator |
+
+## Sau V38
+
+- [PR #1](https://github.com/chiinthedesert/neu_python_master_dashboard/pull/1) tích hợp Truyền thông và Nhà tài trợ, bổ sung bộ lọc Truyền thông, loading dùng chung và tooltip biểu đồ.
+- [So sánh hai vòng thi](https://github.com/chiinthedesert/neu_python_master_dashboard/commit/0aaf5e7cc8121e203b400418187483e77e88cd5a) thêm chế độ Cả hai vòng, tỷ trọng xếp loại theo bảng và vòng, cùng các nhóm điểm thành phần.
+- Tài khoản có khối Quyền truy cập chỉ đọc. Loading M3 tại phiên đăng nhập, bảng và biểu đồ bắt đầu đổi hình sau khoảng 140 ms. Khi bật giảm chuyển động, hình giữ nguyên.

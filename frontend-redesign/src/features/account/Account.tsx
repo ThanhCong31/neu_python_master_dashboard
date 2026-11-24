@@ -5,7 +5,7 @@ import { useWorkspace } from "@/app/workspace";
 import { api } from "@/services/api";
 
 export default function Account() {
-  const { user } = useWorkspace();
+  const { user, destinations } = useWorkspace();
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -41,8 +41,7 @@ export default function Account() {
       <div>
         <h2 className="text-title-large">{user.full_name}</h2>
         <p className="text-body-medium text-on-surface-variant">
-          @{user.username} ·{" "}
-          {user.role === "admin" ? "Quản trị viên" : user.partner_name}
+          @{user.username}
         </p>
       </div>
       <h2 className="text-title-large">Đổi mật khẩu</h2>
@@ -77,6 +76,27 @@ export default function Account() {
           {busy ? "Đang lưu…" : "Lưu mật khẩu"}
         </Button>
       </form>
+      <section aria-labelledby="account-access" className="space-y-4 border-t border-outline-variant pt-6">
+        <h2 id="account-access" className="text-title-large">Quyền truy cập</h2>
+        <dl className="grid gap-4 text-body-medium">
+          <div>
+            <dt className="text-on-surface-variant">Vai trò</dt>
+            <dd>{user.role === "admin" ? "Quản trị viên" : "Đối tác"}</dd>
+          </div>
+          {user.role === "partner" && <div>
+            <dt className="text-on-surface-variant">Đối tác</dt>
+            <dd>{user.partner_name || user.partner_code || "Chưa xác định"}</dd>
+          </div>}
+          <div>
+            <dt className="text-on-surface-variant">Xem thông tin cá nhân</dt>
+            <dd>{user.can_view_pii ? "Được xem theo phạm vi được cấp" : "Giới hạn theo quyền tài khoản"}</dd>
+          </div>
+          <div>
+            <dt className="text-on-surface-variant">Màn hình được cấp quyền</dt>
+            <dd>{destinations.length ? destinations.map(item => item.label).join(", ") : "Chưa có màn nghiệp vụ được cấp quyền."}</dd>
+          </div>
+        </dl>
+      </section>
     </section>
   );
 }

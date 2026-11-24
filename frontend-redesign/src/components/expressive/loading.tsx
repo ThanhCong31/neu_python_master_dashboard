@@ -7,7 +7,9 @@ import './loading.css';
 
 // Adapted from Expressive's registry loading.tsx and shape.tsx (eb96d3d).
 // Use its Material shapes and spring helpers, without an extra animation dependency.
-const sequence: readonly MaterialShapeName[] = ['soft-burst', 'cookie-9', 'pentagon', 'pill', 'sunny', 'cookie-4', 'oval'];
+const sequence: readonly MaterialShapeName[] = ['soft-burst', 'pill', 'pentagon', 'cookie-9', 'sunny', 'cookie-4', 'oval'];
+const firstMorphMs = 140;
+const morphIntervalMs = 650;
 const spring = { dampingRatio: 0.6, stiffness: 200 };
 const samples = new Map<MaterialShapeName, Point[] | null>();
 function points(name: MaterialShapeName) {
@@ -23,8 +25,12 @@ function MorphShape() {
   const name = reduced ? sequence[0]! : sequence[index]!;
   useEffect(() => {
     if (reduced) return;
-    const timer = window.setInterval(() => setIndex(i => (i + 1) % sequence.length), 650);
-    return () => window.clearInterval(timer);
+    function advance() {
+      setIndex(i => (i + 1) % sequence.length);
+      timer = window.setTimeout(advance, morphIntervalMs);
+    }
+    let timer = window.setTimeout(advance, firstMorphMs);
+    return () => window.clearTimeout(timer);
   }, [reduced]);
   useLayoutEffect(() => {
     const node = path.current;
