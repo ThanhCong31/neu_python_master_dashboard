@@ -3,6 +3,7 @@ import { Select as BaseSelect } from "@base-ui/react/select";
 import { Field } from "@base-ui/react/field";
 import { cn } from "@/lib/expressive/utils";
 import type { MotionProp } from "@/lib/expressive/use-motion";
+import "./workspace-fields.css";
 
 /*
  * Select (M3 "exposed dropdown menu"): a field that opens a menu of options.
@@ -27,7 +28,7 @@ export interface SelectProps<Value> extends Omit<BaseSelect.Root.Props<Value>, "
   /** Filtering toolbars use a static label to keep all controls aligned. */
   labelPlacement?: "floating" | "above";
   items?: SelectItemData[];
-  variant?: "filled" | "outlined";
+  variant?: "filled" | "outlined" | "compact";
   /** Shown in the field while it's open and nothing is chosen. */
   placeholder?: React.ReactNode;
   supportingText?: React.ReactNode;
@@ -60,22 +61,25 @@ export function Select<Value>({
   ...root
 }: SelectProps<Value>) {
   const filled = variant === "filled";
-  const above = labelPlacement === "above";
+  const compact = variant === "compact";
+  const above = compact || labelPlacement === "above";
   return (
     <Field.Root
       data-slot="select"
+      data-variant={variant}
       invalid={invalid}
       disabled={disabled}
       className={cn("group/select flex w-full flex-col gap-1 data-disabled:opacity-(--ex-disabled-content)", className)}
       style={labelBackground ? ({ "--ex-field-label-bg": labelBackground } as React.CSSProperties) : undefined}
     >
-      {above && <span className="text-label-medium font-medium text-on-surface-variant">{label}</span>}
+      {above && <span data-slot="select-caption" aria-hidden={compact || undefined} className="text-label-medium font-medium text-on-surface-variant">{label}</span>}
       <BaseSelect.Root items={items as BaseSelect.Root.Props<Value>["items"]} disabled={disabled} {...root}>
         <div
+          data-slot="select-shell"
           className={cn(
             "relative flex h-14 items-center text-on-surface-variant transition-colors spring-effects-fast",
             "[&_svg]:size-6 [&_svg]:shrink-0",
-            filled
+            compact ? "" : filled
               ? [
                   "rounded-t-shape-extra-small bg-surface-container-highest",
                   "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-on-surface-variant after:transition-[height,background-color] after:spring-effects-fast",
@@ -91,6 +95,7 @@ export function Select<Value>({
         >
           <BaseSelect.Trigger
             data-slot="select-trigger"
+            aria-label={compact ? label : undefined}
             className={cn(
               "peer absolute inset-0 flex cursor-pointer items-center gap-3 rounded-[inherit] px-4 text-start text-body-large text-on-surface outline-none",
               "hover:bg-on-surface/(--ex-state-hover) data-disabled:cursor-default",
@@ -139,6 +144,7 @@ export function Select<Value>({
           <BaseSelect.Positioner alignItemWithTrigger={false} sideOffset={4} collisionPadding={8} className="z-50 outline-none">
             <BaseSelect.Popup
               data-slot="select-menu"
+              data-variant={variant}
               data-motion={motion}
               className={cn(
                 "flex max-h-(--available-height) min-w-(--anchor-width) flex-col overflow-y-auto rounded-shape-large bg-surface-container p-1 text-on-surface shadow-elevation-2 outline-none",

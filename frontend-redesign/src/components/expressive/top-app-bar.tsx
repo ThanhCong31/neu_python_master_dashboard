@@ -11,6 +11,8 @@ import { cn } from "@/lib/expressive/utils";
 export interface TopAppBarProps extends Omit<React.ComponentProps<"header">, "title"> {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
+  /** Allow long page titles to wrap on compact screens. */
+  wrapTitle?: boolean;
   variant?: "small" | "center" | "medium" | "large";
   /** Leading slot, usually a menu or back IconButton. */
   navigation?: React.ReactNode;
@@ -39,6 +41,7 @@ export function TopAppBar({
   className,
   title,
   subtitle,
+  wrapTitle = false,
   variant = "small",
   navigation,
   actions,
@@ -54,7 +57,7 @@ export function TopAppBar({
     <div className={cn("flex min-w-0 flex-col", variant === "center" && "items-center text-center")}>
       <div
         className={cn(
-          "truncate text-on-surface",
+          wrapTitle ? "whitespace-normal break-words text-on-surface" : "truncate text-on-surface",
           variant === "medium" ? "text-headline-medium" : variant === "large" ? "text-display-small" : "text-title-large",
         )}
       >
@@ -76,7 +79,7 @@ export function TopAppBar({
       )}
       {...props}
     >
-      <div className="flex h-16 items-center gap-1">
+      <div className={cn("flex items-center gap-1", wrapTitle ? "min-h-16 py-1" : "h-16")}>
         <div className="flex w-12 shrink-0 justify-center empty:w-3">{navigation}</div>
         <div className={cn("min-w-0 flex-1", variant === "center" && "flex justify-center")}>{!flexible && heading}</div>
         <div className="flex shrink-0 items-center gap-0 pr-1 empty:w-12">{actions}</div>

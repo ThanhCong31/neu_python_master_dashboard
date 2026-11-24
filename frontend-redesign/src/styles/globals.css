@@ -457,3 +457,13 @@ body { margin: 0; background: var(--ex-color-surface); color: var(--ex-color-on-
 .ex-connected-actions > [data-slot="button"]:last-child { border-start-end-radius:999px; border-end-end-radius:999px; }
 .ex-connected-actions > [data-slot="button"]:active { border-radius:4px; }
 .ex-connected-actions > [data-slot="button"]:focus-visible { z-index:1; }
+
+/* Shell actions follow the real content width, including the open sidebar. */
+.shell-page { container: shell-page / inline-size; }
+.shell-scope-inline { display: none; }
+.shell-scope-row { display: flex; justify-content: flex-end; min-width: 0; }
+.shell-scope-row .workspace-scope-trigger { max-width: 100%; }
+@container shell-page (min-width: 740px) {
+  .shell-scope-inline { display: block; }
+  .shell-scope-row { display: none; }
+}

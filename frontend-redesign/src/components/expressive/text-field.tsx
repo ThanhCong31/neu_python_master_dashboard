@@ -1,12 +1,13 @@
 import * as React from "react";
 import { Field } from "@base-ui/react/field";
 import { cn } from "@/lib/expressive/utils";
+import "./workspace-fields.css";
 
 export interface TextFieldProps extends Omit<Field.Control.Props, "className" | "children"> {
   label: string;
   /** Labels above filter controls instead of mixing floating and fixed labels. */
   labelPlacement?: "floating" | "above";
-  variant?: "filled" | "outlined";
+  variant?: "filled" | "outlined" | "search";
   supportingText?: React.ReactNode;
   /** Shown instead of `supportingText` when `invalid`. */
   errorText?: React.ReactNode;
@@ -40,23 +41,27 @@ export function TextField({
   ...props
 }: TextFieldProps) {
   const filled = variant === "filled";
-  const above = labelPlacement === "above";
+  const search = variant === "search";
+  const above = !search && labelPlacement === "above";
   return (
     <Field.Root
       data-slot="text-field"
+      data-variant={variant}
       invalid={invalid}
       disabled={disabled}
       className={cn("group/field flex w-full flex-col gap-1 data-disabled:opacity-(--ex-disabled-content)", className)}
       style={labelBackground ? ({ "--ex-field-label-bg": labelBackground } as React.CSSProperties) : undefined}
     >
+      {search && <Field.Label className="sr-only">{label}</Field.Label>}
       {above && <Field.Label className="text-label-medium font-medium text-on-surface-variant">{label}</Field.Label>}
       <div
+        data-slot="text-field-shell"
         className={cn(
           "relative flex h-14 items-center gap-3 px-4 text-on-surface-variant transition-colors spring-effects-fast",
           leadingIcon && "pl-3",
           trailingIcon && "pr-3",
           "[&_svg]:size-6 [&_svg]:shrink-0",
-          filled
+          search ? "" : filled
             ? [
                 "rounded-t-shape-extra-small bg-surface-container-highest",
                 // Active indicator: 1px line that grows to 2px in the focus color.
@@ -75,7 +80,7 @@ export function TextField({
       >
         {leadingIcon}
         <div className="relative flex h-full min-w-0 flex-1 flex-col justify-center">
-          {!above && <Field.Label
+          {!above && !search && <Field.Label
             className={cn(
               "pointer-events-none absolute left-0 origin-top-left truncate text-body-large text-on-surface-variant",
               "transition-[transform,color,top] spring-spatial-fast",
@@ -99,6 +104,7 @@ export function TextField({
               filled && !above && "pt-4",
               "group-data-invalid/field:caret-error",
             )}
+            placeholder={search ? label : undefined}
             {...props}
           />
         </div>

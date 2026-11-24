@@ -1,0 +1,53 @@
+/* Connected M3 Expressive selection: no enclosing track or width morph. */
+.ex-view-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  inline-size: max-content;
+  min-inline-size: min(100%, 22rem);
+  max-inline-size: 100%;
+  align-items: stretch;
+}
+.ex-view-switch > [data-slot="button"] {
+  --ex-view-inner: var(--ex-shape-corner-small, 8px);
+  /* Finite radius keeps the interpolation visible instead of jumping from 8 to 999px. */
+  --ex-view-pill: 32px;
+  --ex-view-start: var(--ex-view-inner);
+  --ex-view-end: var(--ex-view-inner);
+  box-sizing: border-box;
+  min-inline-size: 0;
+  min-block-size: 48px;
+  block-size: auto;
+  padding: 10px clamp(8px, 2cqi, 18px);
+  justify-content: center;
+  white-space: normal;
+  line-height: 1.35;
+  text-align: center;
+  background: var(--ex-color-secondary-container);
+  color: var(--ex-color-on-secondary-container);
+  border-start-start-radius: var(--ex-view-start);
+  border-end-start-radius: var(--ex-view-start);
+  border-start-end-radius: var(--ex-view-end);
+  border-end-end-radius: var(--ex-view-end);
+  /* Short, nonelastic shape/color transition. Existing state layer and ripple remain. */
+  transition: border-radius 140ms ease-out, background-color 120ms ease-out, color 120ms ease-out;
+}
+.ex-view-switch > [data-slot="button"]:first-child { --ex-view-start: var(--ex-view-pill); }
+.ex-view-switch > [data-slot="button"]:last-child { --ex-view-end: var(--ex-view-pill); }
+.ex-view-switch > [data-slot="button"][aria-pressed="true"] {
+  --ex-view-inner: var(--ex-view-pill);
+  background: var(--ex-color-secondary);
+  color: var(--ex-color-on-secondary);
+}
+.ex-view-switch-label { min-inline-size: 0; overflow-wrap: anywhere; }
+.ex-view-switch > [data-slot="button"]:focus-visible { z-index: 1; }
+@container (max-width: 679px) {
+  .ex-view-switch { inline-size: 100%; min-inline-size: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ex-view-switch > [data-slot="button"] { transition: none; }
+}
+
+.ex-view-switch-compact {min-inline-size:0; inline-size:max-content;}
+.ex-view-switch-compact > [data-slot="button"] {min-block-size:44px;padding-inline:12px;}
+@container (max-width:479px) {.ex-view-switch-compact{inline-size:100%;}}
