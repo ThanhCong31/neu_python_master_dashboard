@@ -8,12 +8,13 @@ const context = {
   fetch: async (path, options) => {
     calls.push({ path, options });
     return { ok: status >= 200 && status < 300, status,
-      json: async () => status >= 400 ? ({ detail: "API rejected the operation" }) : ({ ok: true }) };
+      json: async () => status >= 400 ? ({ detail: "API rejected the operation" }) : ({ ok: true }),
+      blob: async () => ({ type: "application/pdf", size: 10 }) };
   },
   window: { dispatchEvent: event => events.push(event.type) },
   Event: class { constructor(type) { this.type = type; } },
 };
-const { api, ApiError } = evaluateTypescript(new URL("../src/services/api.ts", import.meta.url), { context, exports: ["api", "ApiError"] });
+const { api, apiFile, ApiError } = evaluateTypescript(new URL("../src/services/api.ts", import.meta.url), { context, exports: ["api", "apiFile", "ApiError"] });
 const result = await api("/admin/partners/NEU", { method: "PATCH", json: { modules: ["quality"] } });
 assert.equal(result.ok, true);
 assert.equal(calls[0].path, "/api/admin/partners/NEU");
@@ -28,3 +29,12 @@ status = 401;
 await assert.rejects(api("/admin/users"), e => e.status === 401);
 assert.deepEqual(events, ["session-expired"]);
 console.log("PASS  API paths, PATCH JSON payload, same-origin session, errors and expired-session event");
+
+status = 200;
+const file = await apiFile("/overview/export?format=pdf");
+assert.equal(file.type, "application/pdf");
+assert.equal(calls.at(-1).options.credentials, "same-origin");
+status = 401;
+await assert.rejects(apiFile("/overview/export?format=pdf"), e => e.status === 401);
+assert.deepEqual(events, ["session-expired", "session-expired"]);
+console.log("PASS  Authenticated binary response and expired-session handling");

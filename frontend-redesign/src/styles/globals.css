@@ -449,3 +449,11 @@ body { margin: 0; background: var(--ex-color-surface); color: var(--ex-color-on-
 .workspace-scope-menu[data-ending-style] { transform: translateY(-4px) !important; opacity: 0; }
 .workspace-scope-menu { transition-duration: 150ms !important; transition-timing-function: cubic-bezier(.2,0,0,1) !important; }
 .workspace-scope-menu [data-slot="menu-radio-item"] {height:48px;min-height:48px;}
+
+/* Connected action group: independent actions, outer corners round, inner corners compact. */
+.ex-connected-actions { display:inline-flex; gap:2px; align-items:stretch; }
+.ex-connected-actions > [data-slot="button"] { border-radius: 6px; }
+.ex-connected-actions > [data-slot="button"]:first-child { border-start-start-radius:999px; border-end-start-radius:999px; }
+.ex-connected-actions > [data-slot="button"]:last-child { border-start-end-radius:999px; border-end-end-radius:999px; }
+.ex-connected-actions > [data-slot="button"]:active { border-radius:4px; }
+.ex-connected-actions > [data-slot="button"]:focus-visible { z-index:1; }

@@ -1,3 +1,5 @@
+> **V12 — Tổng quan:** xem [REDESIGN-V12.md](./REDESIGN-V12.md) cho phạm vi, hướng dẫn tích hợp và kết quả kiểm thử. Overview dùng API thực; biểu đồ ECharts 6.1.0.
+
 > **Revision 3:** See [REDESIGN-V3.md](./REDESIGN-V3.md) for the restored favicon, simplified profile-only theme controls, saved preferences, system API review, and test commands. Frontend-only; backend untouched.
 
 > **Revision 2:** See [REDESIGN-V2.md](./REDESIGN-V2.md) for partner permission UX fixes, verified save, M3 Expressive dropdowns, theme color picker, and QA checklist. Frontend-only; backend untouched.
@@ -34,7 +36,7 @@ Chạy backend FastAPI hiện có trên cổng 8000 với MongoDB và tài kho�
 - Gửi cookie phiên cùng origin. Frontend không lưu mật khẩu hay token vào localStorage.
 - Backend tiếp tục quyết định quyền trên từng request.
 
-Sáu màn nghiệp vụ Tổng quan, Liên hệ, Leads, Truyền thông, Nhà tài trợ và Kết quả thi vẫn là placeholder có chủ ý. Hai màn thuộc Hệ thống (Chất lượng dữ liệu, Quản trị) đã triển khai với API thực. Đăng nhập và Tài khoản đã có sẵn từ bản shell.
+Màn Tổng quan đã triển khai trong V12. Năm màn Liên hệ, Leads, Truyền thông, Nhà tài trợ và Kết quả thi vẫn là placeholder trong baseline V9 này (nhánh làm việc của nhóm có thể đã cập nhật). Hai màn thuộc Hệ thống (Chất lượng dữ liệu, Quản trị) đã triển khai với API thực. Đăng nhập và Tài khoản đã có sẵn từ bản shell.
 
 ## Điều hướng
 

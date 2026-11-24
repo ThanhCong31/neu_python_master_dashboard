@@ -13,8 +13,9 @@
     "test:theme": "node scripts/test-theme.mjs",
     "check:system-api": "node scripts/check-system-api.mjs",
     "test:api": "node scripts/test-api-service.mjs",
-    "test:local": "npm run test:source && npm run test:theme && npm run test:api",
-    "test:source": "node scripts/check-source.mjs"
+    "test:local": "npm run test:source && npm run test:theme && npm run test:api && npm run test:overview",
+    "test:source": "node scripts/check-source.mjs",
+    "test:overview": "node --experimental-strip-types scripts/test-overview.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -22,6 +23,7 @@
     "@material/material-color-utilities": "^0.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "echarts": "6.1.0",
     "lucide-react": "^1.77.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

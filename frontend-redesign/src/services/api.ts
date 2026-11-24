@@ -10,7 +10,7 @@ export interface ApiOptions {
   body?: BodyInit | null;
   headers?: Record<string, string>;
 }
-export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+async function request(path: string, options: ApiOptions = {}): Promise<Response> {
   const { json, signal, method, body, headers } = options;
   if (json !== undefined && body !== undefined) throw new Error("Use either json or body, not both.");
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Invalid API path.");
@@ -31,6 +31,16 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     }
     throw new ApiError(response.status, message);
   }
+  return response;
+}
+export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+  const response = await request(path, options);
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
+}
+
+/** Same authenticated error handling as JSON API, for file downloads. */
+export async function apiFile(path: string, options: ApiOptions = {}): Promise<Blob> {
+  const response = await request(path, options);
+  return response.blob();
 }
