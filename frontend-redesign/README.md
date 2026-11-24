@@ -12,10 +12,10 @@ Các component UI được cài bằng CLI của Expressive và nằm trực ti�
 
 ## Chạy
 
-Cần Node.js 22.12+ hoặc Node.js 24.
+Cần Node.js >= 22.16.0 (xem `engines` trong `package.json`); sử dụng phiên bản tương thích với lockfile.
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
@@ -36,17 +36,22 @@ Chạy backend FastAPI hiện có trên cổng 8000 với MongoDB và tài kho�
 - Gửi cookie phiên cùng origin. Frontend không lưu mật khẩu hay token vào localStorage.
 - Backend tiếp tục quyết định quyền trên từng request.
 
-Màn Tổng quan đã triển khai trong V12. Năm màn Liên hệ, Leads, Truyền thông, Nhà tài trợ và Kết quả thi vẫn là placeholder trong baseline V9 này (nhánh làm việc của nhóm có thể đã cập nhật). Hai màn thuộc Hệ thống (Chất lượng dữ liệu, Quản trị) đã triển khai với API thực. Đăng nhập và Tài khoản đã có sẵn từ bản shell.
+Tổng quan, Liên hệ & chuyển đổi, Lead từ biểu mẫu, Kết quả thi, Chất lượng dữ liệu, Quản trị, Đăng nhập và Tài khoản đã có implementation API. Truyền thông và Nhà tài trợ thuộc nhánh của đồng đội; chưa nằm trong nghiệm thu V37. Xem [REDESIGN-V37.md](./REDESIGN-V37.md) để biết điều kiện còn mở trước release. Điểm thi là dữ liệu giả lập, không dùng để công bố hoặc đánh giá cá nhân.
 
 ## Điều hướng
 
 Tuyển sinh là một nút menu cha có hai mục con thụt vào, có đường nối và trạng thái được chọn riêng. Có thể mở/đóng nhóm. Trong rail thu gọn, bấm Tuyển sinh sẽ mở rộng sidebar để thấy hai mục con. Các mục độc lập tiếp tục ở cấp trên. Hệ thống có đường phân cách và nhãn riêng.
 
-Dưới 768 px, dùng drawer của Expressive. Từ 768 px, sidebar thu gọn được. Mặc định mở từ 1200 px, có lưu lựa chọn. Ctrl+B hoặc Cmd+B bật/tắt sidebar. Avatar mở menu tài khoản, theme và đăng xuất.
+Dưới 768 px, dùng drawer của Expressive. Từ 768 px, sidebar thu gọn được. Mặc định mở từ 1200 px, có lưu lựa chọn. Dùng nút bật/tắt sidebar trên Top App Bar (phím tắt sidebar đang tắt). Avatar mở menu tài khoản, theme và đăng xuất.
 
 ## Kiểm tra đã thực hiện
 
-Bản shell nền trước đây có xác nhận TypeScript và Vite build. **Bản V3 đã chạy kiểm tra cú pháp và import nội bộ, unit tests cho theme/API client. `npm run build` vẫn cần chạy trên máy phát triển do môi trường đóng gói không có đầy đủ npm packages.** Cần chạy `npm ci && npm run build` và thử API thực trên máy phát triển. Chưa kiểm thử tích hợp với MongoDB của dự án. Source giao hàng gọi API backend trực tiếp và không chứa chế độ demo.
+```sh
+npm run test:local
+npm run build
+```
+
+`test:local` gồm kiểm tra TypeScript và các test logic/theme/API/charts/reliability. V37 có test độc lập chạy qua, nhưng full build và tích hợp React/FastAPI/MongoDB chưa được xác nhận trong workspace đóng gói. Không bỏ qua lỗi compiler. Kiểm tra trực tiếp browser theo `docs/final-review/release-checklist.md` trước khi merge/deploy. Xác nhận backend thực tế phục vụ `frontend-redesign/dist` hoặc dùng reverse proxy cùng origin (không giả định backend đã đổi đường dẫn phục vụ frontend cũ).
 
 ## Cấu trúc và phân công
 
@@ -87,7 +92,7 @@ Thêm màn hình bằng cách khai báo trong `routes.ts` của feature rồi đ
 
 Chọn seed mặc định #6750A4, color variant expressive, motion scheme expressive, motion engine CSS và shape scale expressive. Font Inter được nạp từ Fontsource. Icon ứng dụng dùng Lucide. Giấy phép MIT của thư viện nằm trong `EXPRESSIVE-LICENSE`.
 
-Các file trong `components/expressive/` và `lib/expressive/` giữ nguyên nội dung CLI cài. `NavigationTrigger` trong shell truyền aria-expanded theo trạng thái drawer trên mobile và đóng drawer khi chuyển sang desktop.
+Các file trong `components/expressive/` và `lib/expressive/` gồm source từ CLI và các adaptation đã được review; không ghi đè bằng registry khi chưa kiểm tra diff. `NavigationTrigger` trong shell truyền aria-expanded theo trạng thái drawer trên mobile và đóng drawer khi chuyển sang desktop.
 
 ## Thêm component và cập nhật theme
 
