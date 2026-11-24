@@ -24,6 +24,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
+        "http://localhost:5174",
         "https://neu-admissions-dashboard.onrender.com",
     ],
     allow_credentials=True,   # BẮT BUỘC true để gửi cookie đăng nhập
