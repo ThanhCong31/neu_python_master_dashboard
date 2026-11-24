@@ -30,7 +30,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
       <section className="mx-auto my-8 flex max-w-2xl flex-col gap-4 rounded-shape-extra-large border border-error/30 bg-error-container p-6 text-on-error-container" role="alert">
         <div className="flex items-center gap-3">
           <AlertTriangle className="size-6" aria-hidden="true" />
-          <h1 className="text-title-large font-semibold">Không thể hiển thị màn hình</h1>
+          {this.props.screen === "login" || this.props.screen === "workspace" ? <h1 className="text-title-large font-semibold">Không thể hiển thị màn hình</h1> : <h2 className="text-title-large font-semibold">Không thể hiển thị màn hình</h2>}
         </div>
         <p className="text-body-medium">
           Đã xảy ra lỗi giao diện. Những thao tác bạn chưa lưu có thể bị mất nếu tải lại.
