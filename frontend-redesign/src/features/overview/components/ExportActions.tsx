@@ -15,7 +15,10 @@ export function ExportActions({ partner, disabled }: { partner: string | null; d
   const [message,setMessage] = useState('');
   const [failed,setFailed] = useState(false);
   const active = useRef<AbortController | null>(null);
-  useLayoutEffect(()=>()=>active.current?.abort(),[]);
+  useLayoutEffect(()=>{
+    setBusy(null); setMessage('');
+    return ()=>{ active.current?.abort(); active.current=null; };
+  },[partner,disabled]);
   async function download(format: Format) {
     if (active.current || disabled) return;
     const controller = new AbortController(); active.current = controller;
@@ -34,7 +37,7 @@ export function ExportActions({ partner, disabled }: { partner: string | null; d
   }
   return <div className="ov-export">
     <Menu>
-      <MenuTrigger disabled={disabled||busy!==null} render={<Button variant="tonal" size="sm" disabled={disabled||busy!==null} icon={<Download aria-hidden="true"/>}/>}>
+      <MenuTrigger disabled={disabled||busy!==null} render={<Button variant="tonal" motion="standard" className="min-h-12" disabled={disabled||busy!==null} icon={<Download aria-hidden="true"/>}/>}>
         {busy?'Đang xuất…':'Xuất báo cáo'} <ChevronDown aria-hidden="true"/>
       </MenuTrigger>
       <MenuContent align="end" sideOffset={8} className="ov-export-menu">
