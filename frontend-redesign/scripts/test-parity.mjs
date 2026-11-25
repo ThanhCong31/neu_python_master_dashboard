@@ -30,13 +30,13 @@ assert.ok(upload.includes('Diểm giả lập.xlsx'));
 assert.ok(upload.includes('file.size===0'));
 assert.ok(upload.includes('THAY THE'));
 const leads=read('features/admissions/leads/components/Analytics.tsx');
-assert.ok(leads.includes("value:'by_question'"));
-assert.ok(leads.includes("!canViewPii&&selection==='by_question'"));
-assert.ok(!leads.includes('canViewPii&&<section'));
+assert.match(leads, /value\s*:\s*['"]by_question['"]/);
+assert.match(leads, /!canViewPii\s*&&\s*selection\s*===\s*['"]by_question['"]/);
+assert.doesNotMatch(leads, /canViewPii\s*&&\s*<section\b/);
 assert.ok(read('features/admissions/leads/components/Records.tsx').includes('c.key!=="question"||canViewPii'));
 const exams=read('features/results/exams/components/Analytics.tsx');
 for(const field of ['data.by_paid','data.final_by_board','data.finalists','sectionTable','r.box?.[2]'])assert.ok(exams.includes(field),field);
-for(const field of ["type:'boxplot'","type:'scatter'","canViewPii?['Họ tên']","canViewPii?['Trường']"])assert.ok(exams.includes(field),field);
+for(const pattern of [/type\s*:\s*['"]boxplot['"]/, /type\s*:\s*['"]scatter['"]/, /canViewPii\s*\?\s*\[\s*['"]Họ tên['"]/, /canViewPii\s*\?\s*\[\s*['"]Trường['"]/]) assert.match(exams,pattern);
 assert.ok(read('features/results/Exams.tsx').includes('<Analytics canViewPii={user.can_view_pii}'));
 // Real data contracts: source-only guards below are supplementary.
 const channel={contacts:8,web_registered:5,unregistered:3,paid:2,budget_visible:true,budget:0,original_report:{registrations:10}};
@@ -56,17 +56,17 @@ assert.deepEqual(metrics({benefits:[benefit,{...benefit,progress:null},{...benef
 const marketing=read('features/communications/Marketing.tsx');
 const marketingAnalytics=read('features/communications/marketing/components/Analytics.tsx');
 for(const field of ['original_report?.registrations','original_report?.revenue','original_report?.roi','original_report?.comment','active_candidates_assumed','Đối soát: đăng ký theo kênh','Đối soát: doanh thu theo kênh'])assert.ok(marketingAnalytics.includes(field),field);
-assert.equal((marketingAnalytics.match(/<ChannelChart /g)??[]).length,8);
+assert.equal((marketingAnalytics.match(/<ChannelChart\b/g)??[]).length,8);
 assert.ok(marketing.includes('PageRefresh'));assert.ok(marketing.includes('scopedOptions'));
 const shared=read('features/communications/components/ChannelChart.tsx');
-for(const field of ['@/shared/charts/Chart','@/shared/AnalysisTable','@/shared/format','chartBase(p,true,l)'])assert.ok(shared.includes(field),field);
-assert.ok(!shared.includes('com-bar-track'));assert.ok(!shared.includes('rows.slice('));
+for(const field of ['@/shared/charts/Chart','@/shared/AnalysisTable','@/shared/format'])assert.ok(shared.includes(field),field);
+assert.ok(!shared.includes('com-bar-track'));assert.ok(!shared.includes('rows.slice('));assert.match(shared,/chartBase\(\s*p\s*,\s*true\s*,\s*l\s*\)/);
 const filter=read('features/communications/marketing/components/Filters.tsx');assert.ok(filter.includes('@/shared/ResponsiveDialog'));assert.ok(filter.includes('filterError(draft,options)'));
 const sponsor=read('features/communications/Sponsorship.tsx');const sponsorAnalytics=read('features/communications/sponsorship/components/Analytics.tsx');
-assert.ok(sponsor.includes('PageRefresh'));assert.ok(sponsor.includes('scopeStatus'));assert.ok(!sponsorAnalytics.includes('ViewSwitch'));assert.ok(sponsorAnalytics.includes('<BenefitRow '));assert.equal((sponsorAnalytics.match(/<ChannelChart /g)??[]).length,4);
+assert.ok(sponsor.includes('PageRefresh'));assert.ok(sponsor.includes('scopeStatus'));assert.ok(!sponsorAnalytics.includes('ViewSwitch'));assert.match(sponsorAnalytics,/<BenefitRow\b/);assert.equal((sponsorAnalytics.match(/<ChannelChart\b/g)??[]).length,4);
 const quality=read('features/system/Quality.tsx');
 assert.ok(quality.includes('data.by_issue.map'));assert.ok(quality.includes('data.by_reason.map'));
-assert.ok(quality.includes('<SourceDistribution title='));assert.ok(read('features/system/components/SourceDistribution.tsx').includes("stack:'source'"));
+assert.match(quality,/<SourceDistribution\s+title=/);assert.match(read('features/system/components/SourceDistribution.tsx'),/stack\s*:\s*['"]source['"]/);
 console.log('PASS: parity, communications data contracts and source guards. Browser/API/ETL acceptance remains separate.');
 
 // V62: Excel CTR (%) stores percentage points; ratio formatter remains unchanged.
@@ -77,3 +77,28 @@ assert.equal(percentagePointsText(0),'0%');
 for(const missing of [null,undefined,NaN,Infinity])assert.equal(percentagePointsText(missing),'—');
 assert.equal(percentText(.035),'3,5%');
 assert.equal(percentText(3.5),'350%');
+
+// V65: all local chart boundaries delegate to one shared implementation.
+const chartConsumers = [
+  'features/admissions/contacts/components/Analytics.tsx',
+  'features/admissions/leads/components/Analytics.tsx',
+  'features/results/exams/components/Analytics.tsx',
+  'features/overview/components/Analysis.tsx',
+  'features/communications/components/ChannelChart.tsx',
+  'features/system/components/SourceDistribution.tsx',
+  'shared/charts/GradeDistribution.tsx',
+];
+for(const path of chartConsumers){
+  const code=read(path);
+  assert.match(code,/import\s*\{\s*ChartBoundary\s*\}/,path);
+  assert.doesNotMatch(code,/class\s+(ChartBoundary|Boundary)\s+extends/,path);
+}
+for(const path of chartConsumers.slice(0,4)){
+  const code=read(path);
+  assert.match(code,/<MatrixAnalysisTable\b/,path);
+  // Contacts still has a deliberately specialized HTML heatmap.
+  assert.doesNotMatch(code,/<table\s+className=['"](?:ct-table|ld-table|exm-data-table|ov-table)['"]/,path);
+}
+assert.match(read('shared/AnalysisTable.tsx'),/<AnalysisTable\b/);
+assert.match(read('shared/charts/ChartBoundary.tsx'),/class\s+ChartBoundary\s+extends\s+Component/);
+console.log('PASS: shared analytical table and chart boundary wiring.');
