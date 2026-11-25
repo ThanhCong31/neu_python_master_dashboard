@@ -12,7 +12,7 @@ Một điểm vào duy nhất cho tài liệu kỹ thuật. Ưu tiên hướng d
 | [Design system](design-system/README.md) | Component, theme, chart, responsive và loading |
 | [Features](features/README.md) | Audit, hợp đồng API, thiết kế và review theo màn hình |
 | [Final review](final-review/README.md) | Audit liên màn hình, kế hoạch V35–V37 và release checklist |
-| [History](history/README.md) | Các ghi chú phiên bản V2–V38 đã có |
+| [History](history/README.md) | Các ghi chú phiên bản V2–V64 đã có |
 
 ## Quy ước
 

@@ -28,6 +28,10 @@ Các ghi chú triển khai gốc được lưu ở đây thay vì rải ở root
 | [V34](REDESIGN-V34-CHART-REVIEW.md) | V34 — Chart consistency & pre-final review |
 | [V37](REDESIGN-V37.md) | V35–V37 — Final refinement, candidate for local verification |
 | [V38](REDESIGN-V38-LOADING.md) | V38 — Loading indicator |
+| [V39–V53](REDESIGN-V39-V53-PARITY.md) | Khôi phục chức năng nghiệp vụ và dùng chung design system |
+| [V54–V56](REDESIGN-V54-V56-CORRECTION.md) | Sửa phạm vi UI và viết lại Truyền thông / Nhà tài trợ |
+| [V57–V59](REDESIGN-V57-V59-ANALYTICS.md) | Khôi phục biểu đồ Kết quả thi, Chất lượng dữ liệu và sửa lỗi TypeScript |
+| [V60–V64](REDESIGN-V60-V64-REFINEMENT.md) | Tinh chỉnh phân tích, bảng, CTR, chú thích và định dạng số |
 
 ## Sau V38
 
