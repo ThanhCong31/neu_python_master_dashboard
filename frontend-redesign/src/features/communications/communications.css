@@ -46,7 +46,7 @@
 .com-channel-performance .dw-analysis-table :is(th,td){padding:9px 10px;}
 .com-channel-performance .dw-analysis-table td:not(:first-child){min-width:0;max-width:none;}
 .com-channel-performance .dw-analysis-table :is(th,td)[data-align="end"]{white-space:nowrap;}
-.com-channel-performance .dw-analysis-table tr>th:first-child{position:sticky;inset-inline-start:0;min-width:156px;width:156px;max-width:240px;border-inline-end:1px solid var(--ex-color-outline-variant);}
+.com-channel-performance .dw-analysis-table tr>th:first-child{position:sticky;inset-inline-start:0;min-width:120px;width:120px;max-width:120px;border-inline-end:1px solid var(--ex-color-outline-variant);}
 .com-channel-performance .dw-analysis-table thead th:first-child{z-index:3;background:var(--ex-color-surface-container-high);}
 .com-channel-performance .dw-analysis-table tbody th:first-child{z-index:1;background:var(--ex-color-surface-container-low);}
 .com-channel-performance .dw-analysis-table tbody tr:hover th:first-child{background:var(--ex-color-surface-container);}
