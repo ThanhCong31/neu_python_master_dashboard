@@ -77,3 +77,10 @@
 .dw-table th[data-align="end"] .dw-sort-header{justify-content:flex-end;text-align:end;width:100%;}
 /* Keep the label centered even with a sort arrow. Reserve equal space on both sides. */
 .dw-table th[data-align="center"] .dw-sort-header::before{content:"";width:15px;flex:none;}
+
+/* Read-only analytics tables have no trailing detail/action column. */
+.dw-analysis-scroll{max-height:min(55vh,540px);}
+.dw-analysis-table :is(th,td):last-child{width:auto;padding-inline:14px;}
+.dw-analysis-table tbody th{font-weight:500;min-width:120px;max-width:320px;overflow-wrap:anywhere;}
+.dw-analysis-table td[data-align="end"]{white-space:nowrap;}
+.dw-analysis-table td:not([data-align="end"]){white-space:normal;}

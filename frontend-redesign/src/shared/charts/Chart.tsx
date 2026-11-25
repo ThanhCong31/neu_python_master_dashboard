@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { init, use, type EChartsCoreOption } from 'echarts/core';
-import { LineChart, BarChart } from 'echarts/charts';
+import { LineChart, BarChart, ScatterChart, BoxplotChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent, AriaComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { useReducedMotion } from '@/lib/expressive/use-reduced-motion';
@@ -8,7 +8,7 @@ import { useChartPalette, chartBase, type ChartPalette } from './theme';
 import { chartLayoutForWidth, type ChartLayout } from './responsive';
 import { styleSeries, styleAxis, isCategoryAxis, type PlotSeries } from './chart-style';
 import { ChartLegend } from './ChartLegend';
-use([LineChart,BarChart,GridComponent,TooltipComponent,LegendComponent,AriaComponent,CanvasRenderer]);
+use([LineChart,BarChart,ScatterChart,BoxplotChart,GridComponent,TooltipComponent,LegendComponent,AriaComponent,CanvasRenderer]);
 /** Owns ECharts lifecycle. The caller owns semantics, data, and an equivalent HTML table. */
 export default function Chart({ label, makeOption, height=300, compactHeight=height }: {
   label:string;

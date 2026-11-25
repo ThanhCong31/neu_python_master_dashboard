@@ -2,7 +2,7 @@ import type { ReactNode, Key } from 'react';
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { IconButton } from '@/components/expressive/icon-button';
 import { WorkspaceSelect } from './WorkspaceSelect';
-import { numberText } from './format';
+import { numberText,tableCellValue } from './format';
 import './data-workspace.css';
 
 export type RecordColumn<Row>={key:string;label:string;sort?:string;align?:'start'|'center'|'end';render:(row:Row)=>ReactNode};
@@ -16,7 +16,7 @@ export function RecordTable<Row>({rows,columns,rowKey,sort,onSort,action,label,c
       const direction=c.sort&&sort===c.sort?'ascending':c.sort&&sort===`-${c.sort}`?'descending':undefined;
       return <th key={c.key} scope="col" data-align={c.align} aria-sort={direction}>{c.sort?<button type="button" className="dw-sort-header focus-ring" onClick={()=>onSort(direction==='ascending'?`-${c.sort}`:c.sort!)}>{c.label}<span className="dw-sort-icon" aria-hidden="true">{direction==='descending'?<ArrowDown size={15}/>:<ArrowUp size={15} style={{visibility:direction?'visible':'hidden'}}/>}</span></button>:c.label}</th>;
     })}<th scope="col"><span className="dw-sr">Chi tiết</span></th></tr></thead>
-    <tbody>{rows.map((r,i)=><tr key={rowKey(r,i)}>{columns.map(c=><td key={c.key} data-align={c.align}>{c.render(r)}</td>)}<td>{action(r)}</td></tr>)}</tbody></table>
+    <tbody>{rows.map((r,i)=><tr key={rowKey(r,i)}>{columns.map(c=><td key={c.key} data-align={c.align}>{tableCellValue(c.render(r))}</td>)}<td>{action(r)}</td></tr>)}</tbody></table>
   </div>;
 }
 export function RecordList<Row>({rows,rowKey,render,action}:{rows:Row[];rowKey:(row:Row,index:number)=>Key;render:(row:Row)=>ReactNode;action:(row:Row)=>ReactNode}) {

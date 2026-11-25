@@ -3,6 +3,8 @@ export function numberText(value: number | null | undefined, digits = 0) {
   return value == null || !Number.isFinite(value) ? '—' : (digits === 0 ? integer : new Intl.NumberFormat('vi-VN',{maximumFractionDigits:digits})).format(value);
 }
 export function percentText(value: number | null | undefined, digits=1) { return value == null || !Number.isFinite(value) ? '—' : `${numberText(value*100,digits)}%`; }
+/** For source values already expressed in percent (e.g. Excel CTR (%)), not fractions. */
+export function percentagePointsText(value: number | null | undefined, digits=1) { return value == null || !Number.isFinite(value) ? '—' : `${numberText(value,digits)}%`; }
 export function moneyText(value: number | null | undefined) { return value == null || !Number.isFinite(value) ? '—' : `${numberText(value)} ₫`; }
 export function compactMoney(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) return '—';
@@ -11,3 +13,8 @@ export function compactMoney(value: number | null | undefined) {
   return moneyText(value);
 }
 export function dateText(value: string) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value); return m ? `${m[3]}/${m[2]}/${m[1]}` : value; }
+
+/** Display-only table fallback: keep integer identifiers and already formatted text intact. */
+export function tableCellValue<T>(value:T):T|string {
+  return typeof value==='number' && !Number.isInteger(value) ? numberText(value,2) : value;
+}
