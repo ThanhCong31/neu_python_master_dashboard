@@ -32,6 +32,16 @@ def _load() -> Settings:
     if len(jwt_secret) < 32:
         raise RuntimeError("JWT_SECRET trong .env phải có ít nhất 32 ký tự")
     data_dir = Path(os.getenv("DATA_DIR", "Data-20260929T164510Z-1-001/Data"))
+    frontend_dist_env = os.getenv("FRONTEND_DIST")
+    if frontend_dist_env:
+        frontend_dist = Path(frontend_dist_env)
+        if not frontend_dist.is_absolute():
+            frontend_dist = ROOT_DIR / frontend_dist
+    else:
+        redesign_dist = ROOT_DIR / "frontend-redesign" / "dist"
+        legacy_dist = ROOT_DIR / "frontend" / "dist"
+        frontend_dist = redesign_dist if (redesign_dist / "index.html").exists() else legacy_dist
+
     return Settings(
         mongo_uri=os.environ["MONGO_URI"],
         mongo_db_name=os.getenv("MONGO_DB_NAME", "neu_admissions"),
@@ -41,7 +51,7 @@ def _load() -> Settings:
         data_dir=data_dir if data_dir.is_absolute() else ROOT_DIR / data_dir,
         seed_admin_password=os.getenv("SEED_ADMIN_PASSWORD", ""),
         seed_partner_password=os.getenv("SEED_PARTNER_PASSWORD", ""),
-        frontend_dist=ROOT_DIR / "frontend" / "dist",
+        frontend_dist=frontend_dist,
     )
 
 
