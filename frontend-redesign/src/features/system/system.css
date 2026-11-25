@@ -246,8 +246,8 @@
 @media(prefers-reduced-motion:reduce) {.sys-tab,.sys-page-number {transition:none;}}
 
 .sys-account-search {width:min(100%,420px);min-width:0;}
-.sys-filters [data-slot="select"][data-variant="compact"] {flex-direction:column;align-items:stretch;}
-.sys-filters [data-slot="select-shell"] {flex:0 0 48px;}
+.sys-filters [data-slot="select"][data-variant="compact"] {flex-direction:column;flex-wrap:nowrap;align-items:stretch;}
+.sys-filters [data-slot="select"][data-variant="compact"] [data-slot="select-shell"] {flex:0 0 48px;height:48px;min-height:48px;max-height:48px;}
 .sys-filters {align-items:end;}
 /* Content width matters when the desktop sidebar remains open. */
 .sys-save-panel-text {min-width:min(100%,190px);overflow-wrap:anywhere;}

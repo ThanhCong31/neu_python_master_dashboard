@@ -1,8 +1,10 @@
 import "./system.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PageRefresh } from "@/shared/PageActions";
+import { Button } from "@/components/expressive/button";
 import { useWorkspace } from "@/app/workspace";
 import { SystemSelect } from "./components/SystemSelect";
+import { SourceDistribution, validSourceRows } from "./components/SourceDistribution";
 import { useResource } from "@/services/useResource";
 import type { QualityList, QualityRow, QualitySummary } from "./types";
 import { Chip, DataTable, formatDate, formatNumber, Metric, Notice, Pager, Section, State, Tabs, textValue } from "./components/Elements";
@@ -14,7 +16,15 @@ function query(path: string, params: Record<string, string | number | null>) {
   for (const [key, value] of Object.entries(params)) if (value !== null && value !== "") search.set(key, String(value));
   return `${path}?${search.toString()}`;
 }
-function Distribution({ data }: { data: Array<{label:string; count:number}> }) {
+function Distribution({title,description,data,details,labelHeading="Nhóm"}: {title:string;description:string;data:Array<{label:string;count:number}>;details?:Array<{label:string;source:string;count:number}>;labelHeading?:string}) {
+  const [table,setTable]=useState(false);
+  const rows=details??data.map(row=>({...row,source:""}));
+  const chartable=!details||validSourceRows(details);
+  return <Section title={title} description={description} actions={rows.length>0&&chartable?<Button motion="standard" variant="text" onClick={()=>setTable(v=>!v)} aria-pressed={table}>{table?'Biểu đồ':'Bảng số liệu'}</Button>:undefined}>{!chartable&&<p className="sys-muted" role="alert">Số đếm nguồn không hợp lệ; hiển thị bảng nguồn.</p>}{table||!chartable?<DataTable rows={rows} rowKey={(_,i)=>i} columns={[
+    {key:"label",heading:labelHeading,get:r=>r.label},...(details?[{key:"source",heading:"Nguồn",get:(r:typeof rows[number])=>r.source}]:[]),{key:"count",heading:"Số lượng",align:"end",get:r=>formatNumber(r.count)},
+  ]}/>:details?<SourceDistribution title={title} rows={details} labels={data.map(r=>r.label)}/>:<DistributionBars data={data}/>}</Section>;
+}
+function DistributionBars({ data }: { data: Array<{label:string; count:number}> }) {
   const valid = data.every(x=>Number.isSafeInteger(x.count)&&x.count>=0);
   const max = Math.max(1, ...data.map(x=>x.count));
   return <div className="sys-bars">{!valid&&<p role="alert" className="sys-muted">Số đếm không hợp lệ; chỉ hiển thị số liệu nguồn.</p>}{data.length ? data.map(({label,count}) => <div className="sys-bar" key={label}>
@@ -115,7 +125,7 @@ function ScopedQuality() {
   const reasons=useMemo(()=>totals(data?.by_reason ?? [],r=>r.reason),[data]);
   return <div className="sys-page">
     <PageRefresh busy={resource.state==="loading"||resource.refreshing||logsBusy} onRefresh={()=>{resource.retry();setRefreshSignal(n=>n+1);}}/>
-    <p className="sys-muted">Theo dõi chuẩn hóa, gộp trùng và truy vết dữ liệu nguồn.</p>
+    <p className="sys-muted">Nhật ký làm sạch: chuẩn hoá email/SĐT/tỉnh thành/tên trường và gộp trùng. Báo cáo gốc đề xuất dùng dropdown danh mục và kiểm tra ngay trên form để giảm lỗi nhập tự do.</p>
     <State status={resource.state} refreshError={resource.refreshError} error={resource.state==="error"?resource.message:undefined} retry={resource.retry}>
       {data && <>
         <Notice>{isAdmin && partner===null ? "Các thống kê nhật ký đang ở phạm vi toàn hệ thống." : "Đang xem phạm vi đối tác. Thống kê pipeline và lịch sử nhập toàn hệ thống được ẩn để tránh so sánh sai phạm vi."} Dữ liệu cá nhân được API che theo quyền tài khoản.</Notice>
@@ -134,14 +144,14 @@ function ScopedQuality() {
           </div>
         </Section>}
         <div className="sys-two-cols">
-          <Section title="Vấn đề đầu vào" description="Tổng số lần ghi nhận theo loại lỗi."><Distribution data={issues}/></Section>
-          <Section title="Nguyên nhân gộp trùng" description="Tổng số lần ghi nhận theo lý do."><Distribution data={reasons}/></Section>
+          <Distribution title="Lỗi dữ liệu đầu vào theo loại" description="Tổng số lần ghi nhận theo loại lỗi." data={issues} labelHeading="Loại lỗi" details={data.by_issue.map(r=>({label:r.issue,source:r.source,count:r.count}))}/>
+          <Distribution title="Lý do gộp trùng" description="Trùng email là cùng 1 người; trùng SĐT chỉ gộp khi tên khớp." data={reasons} labelHeading="Lý do" details={data.by_reason.map(r=>({label:r.reason,source:r.source,count:r.count}))}/>
         </div>
         <details className="sys-quality-extras">
           <summary>Phân tích bổ sung · Cờ dữ liệu và phân bố hồ sơ</summary>
           <div className="sys-two-cols sys-quality-extras-content">
-            <Section title="Cờ cần kiểm tra" description="Số liên hệ theo từng cờ."><Distribution data={data.flags.map(f=>({label:f.key,count:f.count}))}/></Section>
-            <Section title="Phân bố hồ sơ gộp" description="Một liên hệ được tổng hợp từ bao nhiêu bản ghi nguồn."><Distribution data={data.merged_distribution.map(f=>({label:`${f.merged} bản ghi`,count:f.count}))}/></Section>
+            <Distribution title="Cờ cần kiểm tra thủ công" description="Số liên hệ theo từng cờ." data={data.flags.map(f=>({label:f.key,count:f.count}))}/>
+            <Distribution title="Số bản ghi gộp vào 1 hồ sơ" description="Một liên hệ được tổng hợp từ bao nhiêu bản ghi nguồn." data={data.merged_distribution.map(f=>({label:`${f.merged} bản ghi`,count:f.count}))}/>
           </div>
         </details>
         <Section title="Nhật ký chi tiết" description="Sử dụng bộ lọc để kiểm tra các dòng nguồn; có phân trang từ máy chủ.">
