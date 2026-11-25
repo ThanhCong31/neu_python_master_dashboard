@@ -9,9 +9,8 @@ import type { DataCounts, ImportRun } from "../types";
 import { Chip, DataTable, Dialog, formatDate, formatNumber, FormField, Metric, Notice, Section, State } from "../components/Elements";
 const FILES=[
   {value:"Demo_Data_khách_hàng.xlsx",label:"Dữ liệu khách hàng / CRM"},
-  {value:"Điểm giả lập.xlsx",label:"Dữ liệu điểm thi"},
+  {value:"Diểm giả lập.xlsx",label:"Dữ liệu điểm thi"},
 ] as const;
-const MAX_BYTES=20*1024*1024; // UX bound only; enforce backend max request size separately.
 interface Result {ok:boolean;message:string;counts:Record<string,number>}
 export default function DataManagement({onBusyChange}:{onBusyChange?:(busy:boolean)=>void}={}){
   const status=useResource<DataCounts>("/admin/data-status");
@@ -31,8 +30,8 @@ export default function DataManagement({onBusyChange}:{onBusyChange?:(busy:boole
     setError("");setSuccess("");setConfirmation("");
     if(kind==="upload"){
       if(!file){setError("Vui lòng chọn file trước khi tải lên.");return;}
-      if(!/\.xlsx$/i.test(file.name)){setError("Chỉ hỗ trợ file .xlsx trong giao diện này.");return;}
-      if(file.size===0||file.size>MAX_BYTES){setError("File phải có dung lượng lớn hơn 0 và không vượt 20 MB.");return;}
+      if(!/\.xlsx$/i.test(file.name)){setError("Pipeline hiện đọc workbook .xlsx theo cấu trúc sheet nguồn. Vui lòng chọn đúng workbook.");return;}
+      if(file.size===0){setError("File tải lên không có dữ liệu.");return;}
     }
     setDialog(kind);
   }
@@ -78,7 +77,7 @@ export default function DataManagement({onBusyChange}:{onBusyChange?:(busy:boole
       <Section title="Tải lên file nguồn" description="Ghi đè một file nguồn theo tên đích cố định, rồi chạy ETL.">
         <div className="sys-form">
           <SystemSelect label="Loại dữ liệu" value={target} options={FILES.map(f=>({value:f.value,label:f.label}))} onChange={setTarget}/>
-          <FormField label="File Excel (.xlsx)" hint="Giới hạn 20 MB trong giao diện. Server cần giới hạn dung lượng riêng."><input ref={inputFile} type="file" className="sys-input sys-file" onChange={updateFile} accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/></FormField>
+          <FormField label="File Excel (.xlsx)" hint="Chọn workbook .xlsx đúng cấu trúc sheet của dữ liệu nguồn. Không đặt giới hạn dung lượng riêng ở giao diện."><input ref={inputFile} type="file" className="sys-input sys-file" onChange={updateFile} accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"/></FormField>
           {file&&<p className="sys-muted">{file.name} · {formatNumber(file.size)} bytes</p>}
           <Button icon={<UploadCloud/>} variant="tonal" disabled={!file||busy} onClick={()=>open("upload")}>Tải lên và xử lý</Button>
         </div>

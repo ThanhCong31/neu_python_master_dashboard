@@ -16,8 +16,19 @@ export function styleSeries(series:PlotSeries[],horizontal:boolean):PlotSeries[]
   return series.map((s,i)=>{
     if(s.type==='line')return {...s,lineStyle:{...s.lineStyle,width:3,type:'solid'}};
     if(s.type!=='bar'||!Array.isArray(s.data))return s;
-    // Current dashboard bars are nonnegative counts. Do not reshape unsupported negative/vector data.
-    if(s.data.some(v=>(barValue(v)===null&&v!==null&&v!==undefined)||(barValue(v)??0)<0))return s;
+    // Vector/unsupported data and negative stacks retain their existing treatment.
+    if(s.data.some(v=>barValue(v)===null&&v!==null&&v!==undefined))return s;
+    const signed=s.data.some(v=>(barValue(v)??0)<0);
+    if(signed&&s.stack)return s;
+    if(signed){
+      const negative=horizontal?[BAR_RADIUS,0,0,BAR_RADIUS]:[0,0,BAR_RADIUS,BAR_RADIUS];
+      return {...s,itemStyle:{...s.itemStyle,borderRadius:0},data:s.data.map(datum=>{
+        const v=barValue(datum);if(v===null)return datum;
+        const original=typeof datum==='object'&&datum!==null?datum as Record<string,unknown>:{value:v};
+        const itemStyle=original.itemStyle as Record<string,unknown>|undefined;
+        return {...original,itemStyle:{...itemStyle,borderRadius:v<0?negative:v>0?rounded:0}};
+      })};
+    }
     if(!s.stack)return {...s,itemStyle:{...s.itemStyle,borderRadius:rounded}};
     const above=series.slice(i+1).filter(t=>t.type==='bar'&&t.stack===s.stack&&t.xAxisIndex===s.xAxisIndex&&t.yAxisIndex===s.yAxisIndex);
     return {...s,itemStyle:{...s.itemStyle,borderRadius:0},data:s.data.map((datum,j)=>{

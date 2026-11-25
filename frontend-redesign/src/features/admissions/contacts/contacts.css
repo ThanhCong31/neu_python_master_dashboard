@@ -72,3 +72,8 @@
 @container contacts (max-width:679px){.ct-filter-actions [data-slot="button"]{min-height:48px;}}
 
 .ct-analysis-table :is(th,td)[data-align="end"]{text-align:end;}
+
+.ct-heatmap {border-collapse:separate;border-spacing:2px;font-size:.75rem;font-variant-numeric:tabular-nums;width:100%;}
+.ct-heatmap th,.ct-heatmap td {padding:6px;text-align:center;white-space:nowrap;}
+.ct-heatmap td {border-radius:4px;color:var(--ex-color-on-surface);min-width:32px;}
+.ct-heatmap th:first-child {text-align:start;}

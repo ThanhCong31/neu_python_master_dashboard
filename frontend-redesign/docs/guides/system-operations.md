@@ -6,7 +6,7 @@
 
 Hai màn ở `src/features/system/` dùng endpoint sẵn có của backend `main`, không dùng dữ liệu demo.
 
-- **Chất lượng dữ liệu (`/chat-luong`)**: tổng hợp lỗi/duplicate/flag/merged_distribution; phân tích số lượng theo loại; bảng `issues` và `duplicates` lọc `source`/`issue`, phân trang phía server; trạng thái và kiểm tra của lần import gần nhất (chỉ admin). Nếu đang xem bằng tài khoản đối tác, KHÔNG hiển thị các KPI toàn hệ thống (`pipeline`, `last_import`).
+- **Chất lượng dữ liệu (`/chat-luong`)**: tổng hợp lỗi/duplicate/flag/merged_distribution; phân tích số lượng theo loại; bảng `issues` và `duplicates` lọc `source`/`issue`, phân trang phía server; trạng thái và kiểm tra của lần import gần nhất (chỉ admin). Admin vẫn thấy dữ liệu toàn hệ thống khi đổi phạm vi, với nhãn rõ ràng; tài khoản đối tác không thấy `pipeline` và `last_import`.
 - **Quản trị (`/quan-tri?tab=...`)**: bốn khu vực có deep link query `users`, `partners`, `data`, `audit`. Tài khoản có tạo, sửa họ tên, chuyển đối tác (theo quyền backend), khóa/mở khóa, đặt lại mật khẩu. Đối tác có chỉnh quyền module, PII và trạng thái. Dữ liệu có xem trạng thái, lịch sử import, nạp lại ETL, upload Excel với bước xác nhận. Nhật ký có lọc và xem JSON chi tiết.
 
 ### API sử dụng

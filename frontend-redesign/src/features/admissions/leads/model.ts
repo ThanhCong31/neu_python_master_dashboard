@@ -19,7 +19,7 @@ export type SourceResult={source:string|null;result:string|null;count:number};
 export type Week={week:string;source:string|null;start:string|null;count:number};
 export const dimensions=[['by_source','Nguồn biểu mẫu'],['by_board','Bảng thi quan tâm'],['by_region','Miền'],['by_segment','Nhóm CRM'],['by_pic','Người phụ trách'],['by_campaign','Chiến dịch'],['by_platform','Nền tảng'],['by_heard_from','Biết Talkshow qua'],['by_self_declared','Tình trạng tự khai']] as const;
 export type Dimension=typeof dimensions[number][0];
-export type Summary={kpi:Kpi;by_source_result:SourceResult[];weekly:Week[]} & Record<Dimension,Breakdown[]>;
+export type Summary={kpi:Kpi;by_source_result:SourceResult[];weekly:Week[];by_question?:Breakdown[]} & Record<Dimension,Breakdown[]>;
 export const countsValid=(...counts:number[])=>counts.every(n=>Number.isSafeInteger(n)&&n>=0);
 export function optionsFor(o:LeadOptions,k:GroupKey):Option[]{const values=(o[k]??[]).map(value=>({value,label:value}));return k==='pic'?[...values.filter(v=>v.value!=='__none__'),{value:'__none__',label:'Chưa phân công (null)'}]:values;}
 export function textValue(v:unknown){return v==null||v===''?'—':String(v);}

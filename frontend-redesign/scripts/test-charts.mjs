@@ -16,7 +16,19 @@ for(const horizontal of [false,true]){
  const grouped=styleSeries([{type:'bar',data:[1,0,null],itemStyle:{color:'red'}}],horizontal)[0];assert.deepEqual(grouped.itemStyle.borderRadius,radius);assert.deepEqual(grouped.data,[1,0,null]);
 }
 assert.deepEqual(input,before);
-const unsupported={type:'bar',data:[-1,2]};assert.equal(styleSeries([unsupported],false)[0],unsupported);
+// V64: signed non-stacked bars round only the outward cap; raw values and colors survive.
+for(const horizontal of [false,true]){
+ const signed={type:'bar',data:[{value:-1,itemStyle:{color:'red'},name:'loss'},2,0,null],itemStyle:{color:'blue'}};
+ const original=structuredClone(signed);const result=styleSeries([signed],horizontal)[0];
+ assert.deepEqual(result.data.map(barValue),[-1,2,0,null]);
+ assert.deepEqual(result.data[0].itemStyle.borderRadius,horizontal?[4,0,0,4]:[0,0,4,4]);
+ assert.deepEqual(result.data[1].itemStyle.borderRadius,horizontal?[0,4,4,0]:[4,4,0,0]);
+ assert.equal(result.data[2].itemStyle.borderRadius,0);assert.equal(result.data[3],null);
+ assert.equal(result.data[0].itemStyle.color,'red');assert.equal(result.data[0].name,'loss');
+ assert.deepEqual(signed,original);
+ const stacked={...signed,stack:'signed'};assert.equal(styleSeries([stacked],horizontal)[0],stacked);
+ const vector={type:'bar',data:[[1,2]]};assert.equal(styleSeries([vector],horizontal)[0],vector);
+}
 const objectDatum={type:'bar',stack:'a',data:[{value:2,name:'sample',itemStyle:{color:'red'}}]};const styled=styleSeries([objectDatum],false)[0];assert.equal(styled.data[0].name,'sample');assert.equal(styled.data[0].itemStyle.color,'red');
 assert.equal(styleSeries([{type:'line',data:[1,2],lineStyle:{color:'red'}}],false)[0].lineStyle.width,3);
 assert.equal(sourceRole('FB Lead Form',0),sourceRole('FB Lead Form',3));assert.equal(sourceRole('Talkshow',0),sourceRole('Talkshow Google Form',2));assert.notEqual(sourceRole('FB Lead Form'),sourceRole('Talkshow'));assert.equal(resultRole('Đã có trong Data'),'tertiary');assert.notEqual(resultRole('Lead mới'),resultRole('Trùng trong form ngoài'));

@@ -1,3 +1,4 @@
+import {tableCellValue,numberText} from '@/shared/format';
 import { LoadingState } from "@/shared/LoadingState";
 import { StatusLabel } from "@/shared/StatusLabel";
 export { Checkbox } from "@/components/expressive/checkbox";
@@ -46,7 +47,7 @@ export function Chip({ children, kind = "neutral" }: { children: ReactNode; kind
 export function Metric({ label, value, detail }: { label: string; value: string | number; detail?: string }) {
   return <div className="sys-metric"><p>{label}</p><strong>{value}</strong>{detail && <small>{detail}</small>}</div>;
 }
-export function formatNumber(n: number | null | undefined) { return typeof n === "number" && Number.isFinite(n) ? new Intl.NumberFormat("vi-VN").format(n) : "—"; }
+export function formatNumber(n: number | null | undefined) { return typeof n === "number" && Number.isFinite(n) ? numberText(n,2) : "—"; }
 export function formatDate(s: string | null | undefined) {
   if (!s) return "—";
   const date = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : `${s}Z`);
@@ -62,7 +63,7 @@ export function DataTable<Row>({ rows, columns, rowKey, emptyText = "Chưa có d
   rows: Row[]; columns: Array<Column<Row>>; rowKey: (row: Row, index: number) => string | number; emptyText?: string;
 }) {
   return <div className="sys-table-wrap" role="region" aria-label="Bảng dữ liệu, có thể cuộn ngang" tabIndex={0}><table className="sys-table"><thead><tr>{columns.map(c => <th key={c.key} scope="col" data-align={c.align} className={c.className}>{c.heading}</th>)}</tr></thead>
-    <tbody>{rows.length ? rows.map((r,i) => <tr key={rowKey(r,i)}>{columns.map(c => <td data-align={c.align} className={c.className} key={c.key}>{c.get(r)}</td>)}</tr>)
+    <tbody>{rows.length ? rows.map((r,i) => <tr key={rowKey(r,i)}>{columns.map(c => <td data-align={c.align} className={c.className} key={c.key}>{tableCellValue(c.get(r))}</td>)}</tr>)
       : <tr><td colSpan={columns.length} className="sys-table-empty">{emptyText}</td></tr>}</tbody></table></div>;
 }
 export function Pager({ page, total, pageSize, onPage }: { page: number; total: number; pageSize: number; onPage: (p: number) => void }) {

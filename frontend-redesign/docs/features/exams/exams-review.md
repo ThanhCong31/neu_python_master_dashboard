@@ -41,7 +41,7 @@ All items planned, NOT RUN during research. Record PASS/FAIL/NOT RUN + command/d
 - [ ] 401 returns login; 403 clear actionable error, no leaked previous rows.
 - [ ] Same path refresh fails: old data labelled, retry works; new path failure no stale snapshot.
 - [ ] q pending blocks CSV; abort on query/scope change/unmount.
-- [ ] Restricted PII field hidden; raw backend response not copied into logs/storage. Verify actual server policy separately, UI is not access control.
+- [ ] Restricted account can export scoped CSV; email uses API-masked values, finalist names/schools follow original visibility. Verify server masking, including malformed email, separately; no raw PII in logs/storage.
 - [ ] Names in finalists summary not rendered as chart labels or tables; no fake anonymization claim.
 - [ ] CSV formula injection/back-end risk recorded; confirm restricted policy with owner before release.
 - [ ] Account without exams module cannot enter; module authorization backend independent of navigation.
