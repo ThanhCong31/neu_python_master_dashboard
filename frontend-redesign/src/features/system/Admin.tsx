@@ -13,7 +13,7 @@ type Tab="users"|"partners"|"data"|"audit";
 const tabs: Array<{value:Tab;label:string}>=[
   {value:"users",label:"Tài khoản"},
   {value:"partners",label:"Đối tác & quyền"},
-  {value:"data",label:"Dữ liệu"},
+  {value:"data",label:"Nạp dữ liệu Excel"},
   {value:"audit",label:"Nhật ký"},
 ];
 export default function Admin(){

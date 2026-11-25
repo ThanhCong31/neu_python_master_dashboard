@@ -178,10 +178,12 @@ def process_scores(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 def find_score_file() -> tuple[Path, str]:
     candidates = [
         ROOT_DIR / "data" / "Diểm giả lập.xlsx",
+        ROOT_DIR / "data" / "Điểm giả lập.xlsx",
         ROOT_DIR / "data" / "diem_gia_lap_119_thi_sinh.xlsx",
         ROOT_DIR / "data" / "File_Diem_Cua_Ban.xlsx",
         ROOT_DIR / "File_Diem_Cua_Ban.xlsx",
         ROOT_DIR / "Diểm giả lập.xlsx",
+        ROOT_DIR / "Điểm giả lập.xlsx",
     ]
     for p in candidates:
         if p.exists():

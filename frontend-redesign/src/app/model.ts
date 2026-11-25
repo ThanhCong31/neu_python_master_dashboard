@@ -8,7 +8,8 @@ export type ModuleId =
   | "exams"
   | "sponsorship"
   | "quality"
-  | "admin";
+  | "admin"
+  | "data-import";
 
 export interface User {
   username: string;
