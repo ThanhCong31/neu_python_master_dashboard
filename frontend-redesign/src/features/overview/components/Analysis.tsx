@@ -29,7 +29,7 @@ export function FollowUp({ k, to }: { k:CrmKpi; to?:string }) {
   return <section className="ov-panel ov-follow"><div><h2>Hồ sơ chưa ghi nhận đóng phí</h2><p className="ov-note">Đã đăng ký trên website</p></div><div className="ov-follow-value">{numberText(k.unpaid_registered)}</div><div><p className="ov-note">Tổng lệ phí của nhóm này</p><strong className="ov-follow-money">{moneyText(k.potential_revenue)}</strong></div><p className="ov-note">Không phải doanh thu dự báo. Có thể bao gồm hồ sơ miễn phí; cần đối soát trước khi liên hệ.</p><DetailLink to={to}>Xem liên hệ & chuyển đổi</DetailLink></section>;
 }
 function Table({ headers, rows }: {headers:string[];rows:(string|number)[][]}) {
-  return <div className="ov-table-scroll focus-ring" tabIndex={0} role="region" aria-label="Bảng số liệu"><table className="ov-table"><thead><tr>{headers.map(h=><th key={h} scope="col">{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{r.map((v,j)=>j===0?<th key={j} scope="row">{v}</th>:<td key={j}>{typeof v==='number'?numberText(v):v}</td>)}</tr>)}</tbody></table></div>;
+  return <div className="ov-table-scroll focus-ring" tabIndex={0} role="region" aria-label="Bảng số liệu"><table className="ov-table"><thead><tr>{headers.map(h=><th key={h} scope="col">{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{r.map((v,j)=>j===0?<th key={j} scope="row">{v}</th>:<td key={j}>{typeof v==='number'?numberText(v,2):v}</td>)}</tr>)}</tbody></table></div>;
 }
 // One definition for plot, legend and table: Material roles with solid lines.
 const timelineSeries = [

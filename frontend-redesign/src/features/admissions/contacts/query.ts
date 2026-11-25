@@ -30,7 +30,7 @@ export const pageCount=(total:number,size:number)=>Math.max(1,Math.ceil(total/si
 
 /** Only drill down through exact, representable filters; source combinations are not source membership. */
 export function exactGroupFilter(dimension:Dimension,value:string|null,options?:ContactOptions):{key:GroupKey;value:string}|null {
-  const mapping:Partial<Record<Dimension,GroupKey>>={by_board:'board',by_region:'region',by_province:'province',by_segment:'segment',by_pic:'pic',by_channel:'channel'};
+  const mapping:Partial<Record<Dimension,GroupKey>>={by_board:'board',by_region:'region',by_province:'province',by_segment:'segment',by_pic:'pic',by_channel:'channel',by_venue:'venue'};
   const key=mapping[dimension];if(!key||!options)return null;const v=value===null&&key==='pic'?'__none__':value;
   return v&&!v.includes(',')&&optionsFor(options,key).some(o=>o.value===v)?{key,value:v}:null;
 }

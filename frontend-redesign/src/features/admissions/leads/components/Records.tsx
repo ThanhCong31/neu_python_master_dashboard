@@ -31,6 +31,7 @@ const columns:RecordColumn<LeadRow>[]=[
  {key:'heard_from',label:'Biết Talkshow qua',render:r=>textValue(r.heard_from)},
  {key:'email',label:'Email',render:r=>textValue(r.email)},
  {key:'phone',label:'Điện thoại',render:r=>textValue(r.phone)},
+ {key:'question',label:'Câu hỏi',render:r=>textValue(r.question)},
 ];
 function RowAction({row,onClick}:{row:LeadRow;onClick:()=>void}) {return <IconButton className="dw-row-action" variant="standard" motion="standard" aria-label={`Xem chi tiết ${row.full_name||row.contact_id||'không có mã'} (${textValue(row.source)}, dòng ${textValue(row.row_no)})`} onClick={onClick}><ChevronRight aria-hidden="true"/></IconButton>;}
 export function Records({path,csvPath,controls,onControls,search,onSearch,pending,canViewPii,filterOpen,resource,onReset,hasFilters}:{path:string|null;csvPath:string;controls:ListControls;onControls:(c:ListControls)=>void;search:string;onSearch:(s:string)=>void;pending:boolean;canViewPii:boolean;filterOpen:boolean;resource:ReturnType<typeof useResource<LeadList>>;onReset:()=>void;hasFilters:boolean}) {
@@ -44,7 +45,8 @@ export function Records({path,csvPath,controls,onControls,search,onSearch,pendin
   useEffect(()=>{if(layout==='compact')setColumnOpen(false);},[layout]);
   useEffect(()=>{if(data&&page>pages)onControls({...controls,page:pages});},[data,page,pages]);
   useLayoutEffect(()=>{setDetail(null);},[path,data]);
-  const activeCols=columns.filter(c=>required.includes(c.key)||extra.includes(c.key));
+  const availableColumns=columns.filter(c=>c.key!=="question"||canViewPii);
+  const activeCols=availableColumns.filter(c=>required.includes(c.key)||extra.includes(c.key));
   const setSort=(s:string)=>onControls({...controls,sort:validSort(s),page:1});
   const disabled=!data||!data.total||pending||resource.refreshing||!!resource.refreshError||filterOpen||!path||page>pages;
   const rowIdentity=(r:LeadRow)=>JSON.stringify([r.source,r.row_no]);
@@ -61,7 +63,7 @@ export function Records({path,csvPath,controls,onControls,search,onSearch,pendin
     {!path?<div className="ld-state">Hãy kiểm tra bộ lọc hoặc phạm vi dữ liệu.</div>:resource.state==='error'?<div className="ld-state"><p role="alert">{resource.message}</p><Button motion="standard" variant="tonal" onClick={resource.retry}>Thử lại</Button></div>:!data||page>pages?<LoadingState label="Đang tải lead…"/>:data.rows.length===0?<div className="ld-state"><h3>{hasFilters||search?"Không tìm thấy lead phù hợp":"Không có lead trong phạm vi này"}</h3>{(hasFilters||search)&&<><p className="ld-note">Thử thay đổi tìm kiếm hoặc bộ lọc.</p><Button motion="standard" variant="tonal" onClick={onReset}>Xóa lọc và tìm kiếm</Button></>}</div>:layout==='compact'?<RecordList rows={data.rows} rowKey={rowKey} render={r=><><strong>{r.full_name||'Chưa có họ tên'}</strong><small>{textValue(r.contact_id)} · {textValue(r.source)}</small><Result value={r.result}/><small>{r.created_at?dateText(r.created_at):'Chưa có ngày gửi'}{r.pic?` · ${r.pic}`:''}</small></>} action={action}/>:<RecordTable rows={data.rows} columns={activeCols} rowKey={rowKey} sort={sort} onSort={setSort} action={action} label="Bảng lead, có thể cuộn ngang" className={extra.length?'ld-extra':''}/>}
     {data&&data.total>0&&page<=pages&&<WorkspacePagination page={page} pages={pages} size={size} total={data.total} unit="dòng" pending={pending} onPage={page=>onControls({...controls,page})} onSize={size=>onControls({...controls,size,page:1})}/>}
     {canViewPii&&<p className="ld-note">CSV gồm tất cả dòng phù hợp, theo ngày gửi tăng dần; không chỉ trang hiện tại.</p>}
-    {columnOpen&&layout!=='compact'&&<Dialog title="Cột hiển thị" onClose={()=>setColumnOpen(false)} footer={<><Button motion="standard" variant="text" onClick={()=>setExtra(columns.filter(c=>!required.includes(c.key)).map(c=>c.key))}>Chọn tất cả</Button><Button motion="standard" variant="text" onClick={()=>setExtra([])}>Mặc định</Button><Button motion="standard" onClick={()=>setColumnOpen(false)}>Xong</Button></>}><p className="ld-note">Họ tên, nguồn, kết quả và ngày gửi luôn hiển thị. Các cột bổ sung có thể cuộn ngang.</p>{columns.filter(c=>!required.includes(c.key)).map(c=><Checkbox key={c.key} checked={extra.includes(c.key)} onChange={checked=>{setExtra(old=>checked?[...old.filter(x=>x!==c.key),c.key]:old.filter(x=>x!==c.key));}}>{c.label}</Checkbox>)}</Dialog>}
+    {columnOpen&&layout!=='compact'&&<Dialog title="Cột hiển thị" onClose={()=>setColumnOpen(false)} footer={<><Button motion="standard" variant="text" onClick={()=>setExtra(availableColumns.filter(c=>!required.includes(c.key)).map(c=>c.key))}>Chọn tất cả</Button><Button motion="standard" variant="text" onClick={()=>setExtra([])}>Mặc định</Button><Button motion="standard" onClick={()=>setColumnOpen(false)}>Xong</Button></>}><p className="ld-note">Họ tên, nguồn, kết quả và ngày gửi luôn hiển thị. Các cột bổ sung có thể cuộn ngang.</p>{availableColumns.filter(c=>!required.includes(c.key)).map(c=><Checkbox key={c.key} checked={extra.includes(c.key)} onChange={checked=>{setExtra(old=>checked?[...old.filter(x=>x!==c.key),c.key]:old.filter(x=>x!==c.key));}}>{c.label}</Checkbox>)}</Dialog>}
     {row&&<LeadDetail row={row} canViewPii={canViewPii} onClose={()=>setDetail(null)}/>}
   </section>;
 }

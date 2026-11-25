@@ -26,6 +26,7 @@ const columns:RecordColumn<ContactRow>[]=[
   {key:'first_touch',label:'Tiếp xúc đầu',sort:'first_touch',render:r=>r.first_touch?dateText(r.first_touch):'—'},
   {key:'web_registered_at',label:'Đăng ký web',sort:'web_registered_at',render:r=>r.web_registered_at?dateText(r.web_registered_at):'—'},
   {key:'venue',label:'Điểm thi',render:r=>textValue(r.exam_venue)},
+  {key:'sources',label:'Nguồn dữ liệu',render:r=>Array.isArray(r.sources)?r.sources.join(', ')||'—':'—'},
   {key:'flags',align:'center',label:'Cờ kiểm tra',render:r=>Array.isArray(r.flags)?numberText(r.flags.length):'—'},
   {key:'email',label:'Email',render:r=>textValue(r.email)},
   {key:'phone',label:'Điện thoại',render:r=>textValue(r.phone)},
