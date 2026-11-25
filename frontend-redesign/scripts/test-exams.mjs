@@ -50,3 +50,19 @@ for(const p of [{primary:'#405F90',tertiary:'#715574',secondary:'#535d73',onSeco
   }
 }
 console.log('PASS: solid grade bars, Material theme roles, stable board colors, count validation and responsive chart options.');
+
+// V64: display precision, not data or export precision.
+const {tableCellValue,numberText,percentText,moneyText}=await import('../src/shared/format.ts');
+assert.equal(tableCellValue(541.3684210526316),'541,37');
+assert.equal(tableCellValue(756.6666666666666),'756,67');
+assert.equal(tableCellValue(472.5),'472,5');
+assert.equal(tableCellValue(95),95);assert.equal(tableCellValue('00123'),'00123');
+assert.equal(tableCellValue(null),null);assert.equal(tableCellValue(undefined),undefined);
+assert.equal(tableCellValue(NaN),'—');assert.equal(tableCellValue(Infinity),'—');
+const custom={type:'span'};assert.equal(tableCellValue(custom),custom);
+assert.equal(numberText(95),new Intl.NumberFormat('vi-VN',{maximumFractionDigits:0}).format(95));
+assert.equal(percentText(.035),'3,5%');assert.equal(moneyText(1000.4),'1.000 ₫');
+assert.equal(scoreText(541.3684210526316),'541,37');
+assert.equal(scoreText(756.6666666666666),'756,67');
+assert.equal(scoreText(472.5),'472,5');assert.equal(scoreText(936),'936');
+assert.equal(scoreText(0),'0');assert.equal(scoreText(null),'—');assert.equal(scoreText(NaN),'—');
