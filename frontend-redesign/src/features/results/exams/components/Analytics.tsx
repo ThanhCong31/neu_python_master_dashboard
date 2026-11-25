@@ -707,9 +707,7 @@ export default function Analytics({
   options,
   filters,
   onGroup,
-  canViewPii,
 }: {
-  canViewPii: boolean;
   resource: ReturnType<typeof useResource<Summary>>;
   ready: boolean;
   hasSearch: boolean;
@@ -793,12 +791,12 @@ export default function Analytics({
       <Histogram data={data} />
       <Rounds data={data} />
       <Groups data={data} options={options} filters={filters} onGroup={onGroup} />
-      <Finalists data={data} canViewPii={canViewPii} />
+      <Finalists data={data} />
     </div>
   );
 }
 
-function Finalists({ data, canViewPii }: { data: Summary; canViewPii: boolean }) {
+function Finalists({ data }: { data: Summary }) {
   const [table, setTable] = useState(false);
   const rows = data.finalists ?? [];
   const points = rows.filter(
@@ -821,7 +819,7 @@ function Finalists({ data, canViewPii }: { data: Summary; canViewPii: boolean })
         const point = params as { name?: string; value?: unknown[]; seriesName?: string };
         return [
           safeChartText(point.seriesName),
-          ...(canViewPii && point.name ? [safeChartText(point.name)] : []),
+          ...(point.name ? [safeChartText(point.name)] : []),
           `Vòng loại: ${safeChartText(scoreText(point.value?.[0]))}`,
           `Chung kết: ${safeChartText(scoreText(point.value?.[1]))}`,
         ].join('<br>');
@@ -853,7 +851,7 @@ function Finalists({ data, canViewPii }: { data: Summary; canViewPii: boolean })
       data: points
         .filter((r) => (r.board ?? 'Chưa rõ bảng') === board)
         .map((r) => ({
-          name: canViewPii ? [r.full_name, r.school].filter(Boolean).join(' · ') : '',
+          name: [r.full_name, r.school].filter(Boolean).join(' · '),
           value: [r.qualifier, r.final],
         })),
     })),
@@ -884,17 +882,17 @@ function Finalists({ data, canViewPii }: { data: Summary; canViewPii: boolean })
         <DataTable
           label="Đối chiếu điểm hai vòng"
           headers={[
-            ...(canViewPii ? ['Họ tên'] : []),
+            'Họ tên',
             'Bảng',
-            ...(canViewPii ? ['Trường'] : []),
+            'Trường',
             'Vòng loại',
             'Chung kết',
             'Hạng CK',
           ]}
           rows={rows.map((r) => [
-            ...(canViewPii ? [textValue(r.full_name)] : []),
+            textValue(r.full_name),
             textValue(r.board),
-            ...(canViewPii ? [textValue(r.school)] : []),
+            textValue(r.school),
             scoreText(r.qualifier),
             scoreText(r.final),
             scoreText(r.final_rank),

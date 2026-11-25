@@ -303,9 +303,6 @@ function ScopedQuality() {
   const resource = useResource<QualitySummary>(url);
   const data = resource.state === 'ready' ? resource.data : null;
   const isAdmin = user.role === 'admin';
-  useEffect(() => {
-    if ((!isAdmin || partner !== null) && tab === 'import') setTab('issues');
-  }, [isAdmin, partner, tab]);
   const issueTotal = data?.by_issue.reduce((n, x) => n + x.count, 0) ?? 0;
   const duplicateTotal = data?.by_reason.reduce((n, x) => n + x.count, 0) ?? 0;
   const issues = useMemo(() => totals(data?.by_issue ?? [], (r) => r.issue), [data]);
@@ -332,9 +329,11 @@ function ScopedQuality() {
         {data && (
           <>
             <Notice>
-              {isAdmin && partner === null
-                ? 'Các thống kê nhật ký đang ở phạm vi toàn hệ thống.'
-                : 'Đang xem phạm vi đối tác. Thống kê pipeline và lịch sử nhập toàn hệ thống được ẩn để tránh so sánh sai phạm vi.'}{' '}
+              {isAdmin
+                ? partner === null
+                  ? 'Các thống kê nhật ký đang ở phạm vi toàn hệ thống.'
+                  : 'Nhật ký theo phạm vi đối tác; pipeline và lần nhập gần nhất là dữ liệu toàn hệ thống.'
+                : 'Nhật ký theo phạm vi đối tác. Thống kê và lịch sử nhập toàn hệ thống không hiển thị.'}{' '}
               Dữ liệu cá nhân được API che theo quyền tài khoản.
             </Notice>
             <div className="sys-metrics sys-metrics--quality">
@@ -356,7 +355,7 @@ function ScopedQuality() {
                 )}
               />
             </div>
-            {isAdmin && partner === null && data.pipeline && (
+            {isAdmin && data.pipeline && (
               <Section
                 title="Pipeline tổng thể"
                 description="Dữ liệu toàn hệ thống, không bị ảnh hưởng bởi lựa chọn đối tác."
@@ -434,8 +433,8 @@ function ScopedQuality() {
                 options={[
                   { value: 'issues', label: 'Chuẩn hóa' },
                   { value: 'duplicates', label: 'Gộp trùng' },
-                  ...(isAdmin && partner === null
-                    ? [{ value: 'import' as const, label: 'Lần nhập gần nhất' }]
+                  ...(isAdmin
+                    ? [{ value: 'import' as const, label: 'Lần nhập toàn hệ thống' }]
                     : []),
                 ]}
               />
@@ -447,7 +446,7 @@ function ScopedQuality() {
                 tabIndex={0}
                 aria-labelledby={`system-quality-panel-tab-${tab}`}
               >
-                {tab === 'import' && isAdmin && partner === null ? (
+                {tab === 'import' && isAdmin ? (
                   <Imports summary={data} />
                 ) : (
                   <Logs

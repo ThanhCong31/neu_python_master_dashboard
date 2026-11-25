@@ -32,6 +32,7 @@ Các ghi chú triển khai gốc được lưu ở đây thay vì rải ở root
 | [V54–V56](REDESIGN-V54-V56-CORRECTION.md) | Sửa phạm vi UI và viết lại Truyền thông / Nhà tài trợ |
 | [V57–V59](REDESIGN-V57-V59-ANALYTICS.md) | Khôi phục biểu đồ Kết quả thi, Chất lượng dữ liệu và sửa lỗi TypeScript |
 | [V60–V64](REDESIGN-V60-V64-REFINEMENT.md) | Tinh chỉnh phân tích, bảng, CTR, chú thích và định dạng số |
+| [V65–V67](REDESIGN-V65-V67-RELEASE.md) | Dùng chung component, thu gọn cột Kênh, đối chiếu quyền trước PR |
 
 ## Sau V38
 

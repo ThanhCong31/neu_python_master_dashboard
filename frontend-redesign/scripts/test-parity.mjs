@@ -36,8 +36,24 @@ assert.doesNotMatch(leads, /canViewPii\s*&&\s*<section\b/);
 assert.ok(read('features/admissions/leads/components/Records.tsx').includes('c.key!=="question"||canViewPii'));
 const exams=read('features/results/exams/components/Analytics.tsx');
 for(const field of ['data.by_paid','data.final_by_board','data.finalists','sectionTable','r.box?.[2]'])assert.ok(exams.includes(field),field);
-for(const pattern of [/type\s*:\s*['"]boxplot['"]/, /type\s*:\s*['"]scatter['"]/, /canViewPii\s*\?\s*\[\s*['"]Họ tên['"]/, /canViewPii\s*\?\s*\[\s*['"]Trường['"]/]) assert.match(exams,pattern);
-assert.ok(read('features/results/Exams.tsx').includes('<Analytics canViewPii={user.can_view_pii}'));
+for(const pattern of [/type\s*:\s*['"]boxplot['"]/, /type\s*:\s*['"]scatter['"]/, /textValue\(r\.full_name\)/, /textValue\(r\.school\)/]) assert.match(exams,pattern);
+// V67: module/scope authorize Exams; the backend masks fields. No PII gate on exports or presentation.
+const examRecords=read('features/results/exams/components/Records.tsx');
+const examDetail=read('features/results/exams/components/Detail.tsx');
+assert.match(examRecords, /<CsvDownload\b/);
+assert.match(examRecords, /key\s*:\s*['"]email['"]/);
+assert.match(examRecords, /confirmMessage=/);
+assert.match(examDetail, /\['Email',row\.email\]/);
+for(const source of [exams,examRecords,examDetail]) assert.doesNotMatch(source,/\bcanViewPii\b/);
+const examPage=read('features/results/Exams.tsx');
+assert.doesNotMatch(examPage,/canViewPii=/);
+assert.match(examPage,/user\.can_view_pii/); // still part of identity boundary
+// Keep Lead's concrete free-text mitigation and Quality's global admin-only metadata.
+assert.match(read('features/admissions/leads/components/Records.tsx'),/canExport\(canViewPii\)/);
+const qualityPermissions=read('features/system/Quality.tsx');
+assert.match(qualityPermissions,/isAdmin && data\.pipeline/);
+assert.match(qualityPermissions,/tab === 'import' && isAdmin/);
+assert.doesNotMatch(qualityPermissions,/isAdmin && partner === null/);
 // Real data contracts: source-only guards below are supplementary.
 const channel={contacts:8,web_registered:5,unregistered:3,paid:2,budget_visible:true,budget:0,original_report:{registrations:10}};
 assert.ok(conversionValid(channel));assert.ok(!conversionValid({...channel,paid:6}));assert.ok(!conversionValid({...channel,unregistered:4}));
