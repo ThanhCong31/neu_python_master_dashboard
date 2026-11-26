@@ -2,10 +2,9 @@
 
 import csv
 import math
-import os
-from pathlib import Path
 import re
 from datetime import date, datetime
+from pathlib import Path
 
 import pandas as pd
 

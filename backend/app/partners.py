@@ -6,6 +6,15 @@ Phân quyền gồm 2 lớp:
      Quy tắc gắn mã nằm ở etl/tagging.py; API chỉ cần thêm điều kiện {"partners": <mã>}.
 """
 
+def find_partner(db, code: str | None, *, active_only: bool = False) -> dict | None:
+    if not code:
+        return None
+    match = {"_id": code}
+    if active_only:
+        match["active"] = {"$ne": False}
+    return db.partners.find_one(match)
+
+
 MODULES: dict[str, str] = {
     "overview": "Tổng quan",
     "contacts": "CRM & phễu tuyển sinh",

@@ -28,6 +28,9 @@ class Settings:
 
 
 def _load() -> Settings:
+    mongo_uri = os.getenv("MONGO_URI", "").strip()
+    if not mongo_uri.startswith(("mongodb://", "mongodb+srv://")) or "<" in mongo_uri or ">" in mongo_uri:
+        raise RuntimeError("Cần đặt MONGO_URI hợp lệ trong .env ở thư mục gốc dự án")
     jwt_secret = os.getenv("JWT_SECRET", "")
     if len(jwt_secret) < 32:
         raise RuntimeError("JWT_SECRET trong .env phải có ít nhất 32 ký tự")
@@ -43,7 +46,7 @@ def _load() -> Settings:
         frontend_dist = redesign_dist if (redesign_dist / "index.html").exists() else legacy_dist
 
     return Settings(
-        mongo_uri=os.environ["MONGO_URI"],
+        mongo_uri=mongo_uri,
         mongo_db_name=os.getenv("MONGO_DB_NAME", "neu_admissions"),
         jwt_secret=jwt_secret,
         jwt_expire_hours=int(os.getenv("JWT_EXPIRE_HOURS", "12")),

@@ -132,9 +132,10 @@ def seed_partners_and_users(db, reset_passwords: bool) -> None:
         db.partners.update_one(
             {"_id": p["code"]},
             {
-                "$set": {k: p[k] for k in ("name", "type", "description", "scope_rule")},
-                # Cài đặt quyền chỉ đặt khi tạo mới để không ghi đè chỉnh sửa của admin
-                "$setOnInsert": {"modules": p["modules"], "can_view_pii": False, "active": True, "created_at": now},
+                "$setOnInsert": {
+                    **{key: value for key, value in p.items() if key != "code"},
+                    "can_view_pii": False, "active": True, "created_at": now,
+                },
             },
             upsert=True,
         )

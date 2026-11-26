@@ -8,7 +8,8 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 
-from .partners import PARTNER_CODES
+from .db import get_db
+from .partners import find_partner
 from .security import CurrentUser
 
 
@@ -18,15 +19,47 @@ def split_values(v: str | None) -> list[str]:
     return [p.strip() for p in v.split(",") if p.strip()]
 
 
-def scope_match(user: CurrentUser, partner: str | None) -> dict:
+def scope_match(user: CurrentUser, partner: str | None, collection: str = "") -> dict:
     """Đối tác chỉ thấy document gắn mã của mình; admin có thể xem theo góc nhìn 1 đối tác."""
-    if not user.is_admin:
-        return {"partners": user.partner_code}
-    if partner:
-        if partner not in PARTNER_CODES:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Mã đối tác không hợp lệ: {partner}")
-        return {"partners": partner}
-    return {}
+    code = effective_partner(user, partner)
+    if not code:
+        return {} if user.is_admin else {"_id": {"$in": []}}
+    doc = find_partner(get_db(), code, active_only=True)
+    if not doc:
+        raise HTTPException(404, "Không tìm thấy đối tác đang hoạt động")
+    return partner_data_match(get_db(), doc, collection)
+
+
+def partner_data_match(db, partner: dict, collection: str) -> dict:
+    if "data_scope" not in partner:
+        return {"partners": partner["_id"]}
+    scope = partner["data_scope"]
+    school_ids = scope.get("school_ids", [])
+    contacts = scope.get("contacts", [])
+    school_match = {"school_id": {"$in": school_ids}}
+    # Contact IDs can be recycled on import. Verify the saved email as well.
+    contact_branches = [school_match] if school_ids else []
+    contact_branches.extend({"contact_id": row["contact_id"], "email": row["email"]} for row in contacts)
+    denied = {"_id": {"$in": []}}
+    contact_match = {"$or": contact_branches} if contact_branches else denied
+    if collection == "contacts":
+        return contact_match
+    if collection not in ("leads", "exam_candidates") or not contact_branches:
+        return denied
+
+    # Link across collections by verified email, never by a generated PT/STT alone.
+    linked = []
+    for row in db.contacts.find(contact_match, {"contact_id": 1, "email": 1}):
+        email = row.get("email")
+        if row.get("contact_id") and isinstance(email, str) and email.strip():
+            exact_email = re.compile(r"^\s*" + re.escape(email.strip()) + r"\s*$", re.IGNORECASE)
+            linked.append({"contact_id": row["contact_id"], "email": exact_email})
+    if collection == "leads":
+        return {"$or": linked} if linked else denied
+    branches = [school_match] if school_ids else []
+    if linked:
+        branches.append({"dataset": "PM119", "$or": linked})
+    return {"$or": branches} if branches else denied
 
 
 def effective_partner(user: CurrentUser, partner: str | None) -> str | None:
@@ -64,7 +97,11 @@ def add_search(match: dict, fields: list[str], q: str | None) -> None:
     if not q or not q.strip():
         return
     pattern = re.escape(q.strip()[:80])
-    match["$or"] = [{f: {"$regex": pattern, "$options": "i"}} for f in fields]
+    alternatives = [{f: {"$regex": pattern, "$options": "i"}} for f in fields]
+    if "$or" in match:
+        match.setdefault("$and", []).append({"$or": alternatives})
+    else:
+        match["$or"] = alternatives
 
 
 class ContactFilters:
@@ -97,7 +134,7 @@ class ContactFilters:
         ])
 
     def match(self, user: CurrentUser) -> dict:
-        m = scope_match(user, self.partner)
+        m = scope_match(user, self.partner, "contacts")
         add_date_range(m, "first_touch", self.date_from, self.date_to)
         add_in(m, "board", self.board)
         add_in(m, "region", self.region)
@@ -136,7 +173,7 @@ class LeadFilters:
         self.segment, self.campaign, self.platform, self.pic, self.q = segment, campaign, platform, pic, q
 
     def match(self, user: CurrentUser) -> dict:
-        m = scope_match(user, self.partner)
+        m = scope_match(user, self.partner, "leads")
         add_date_range(m, "created_at", self.date_from, self.date_to)
         add_in(m, "source", self.source)
         add_in(m, "board_interest", self.board)
@@ -172,7 +209,7 @@ class ExamFilters:
         self.grade, self.certificate, self.advanced, self.q = grade, certificate, advanced, q
 
     def match(self, user: CurrentUser) -> dict:
-        m = scope_match(user, self.partner)
+        m = scope_match(user, self.partner, "exam_candidates")
         m["dataset"] = self.dataset
         add_in(m, "board", self.board)
         add_in(m, "region", self.region)

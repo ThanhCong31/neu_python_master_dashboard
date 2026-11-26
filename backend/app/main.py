@@ -11,7 +11,6 @@ from .config import settings
 from .db import get_db
 from .routers import admin, auth, contacts, exams, leads, marketing, misc, overview
 
-# 1. Tạo app MỘT LẦN DUY NHẤT
 app = FastAPI(
     title="NEU Admissions BI",
     version="1.0.0",
@@ -19,7 +18,6 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
 )
 
-# 2. CORS middleware — phải add trước khi include router
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -27,14 +25,21 @@ app.add_middleware(
         "http://localhost:5174",
         "https://neu-admissions-dashboard.onrender.com",
     ],
-    allow_credentials=True,   # BẮT BUỘC true để gửi cookie đăng nhập
+    allow_credentials=True,  # Phiên đăng nhập dùng cookie.
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 3. Include routers
-for r in (auth.router, admin.router, overview.router, contacts.router,
-          marketing.router, leads.router, exams.router, misc.router):
+for r in (
+    auth.router,
+    admin.router,
+    overview.router,
+    contacts.router,
+    marketing.router,
+    leads.router,
+    exams.router,
+    misc.router,
+):
     app.include_router(r)
 
 
@@ -53,9 +58,12 @@ async def security_headers(request: Request, call_next):
 def health():
     get_db().client.admin.command("ping")
     return {"ok": True, "db": settings.mongo_db_name}
+
+
 @app.head("/api/health")
 def health_head():
     return Response(status_code=200)
+
 
 # Phục vụ bản build của frontend (npm run build) — SPA fallback về index.html
 dist = settings.frontend_dist

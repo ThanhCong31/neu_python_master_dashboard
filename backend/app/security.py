@@ -107,6 +107,7 @@ class CurrentUser:
             "partner_name": self.partner_name,
             "modules": self.modules,
             "can_view_pii": self.can_view_pii,
+            "can_export_reports": self.extra.get("can_export_reports", True),
         }
 
 
@@ -147,7 +148,10 @@ def load_current_user(username: str) -> CurrentUser | None:
         partner_name=partner.get("name"),
         modules=[m for m in partner.get("modules", []) if m in MODULES],
         can_view_pii=bool(partner.get("can_view_pii", False)),
-        extra={"token_version": user.get("token_version", 0)},
+        extra={
+            "token_version": user.get("token_version", 0),
+            "can_export_reports": partner.get("can_export_reports", True),
+        },
     )
 
 

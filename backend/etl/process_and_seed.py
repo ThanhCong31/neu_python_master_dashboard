@@ -2,28 +2,23 @@
 và nạp trực tiếp vào MongoDB Atlas.
 """
 
-import io
 import math
-import os
 import sys
-from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR / "backend"))
 
 from app.config import settings
 from app.db import get_db
-from app.partners import DEFAULT_USERS, MODULES, PARTNERS
+from app.partners import DEFAULT_USERS, PARTNERS
 from app.security import hash_password
-from etl.normalize import (
-    clean, norm_province, norm_school, region_of, to_date_str, to_dt, to_float, to_int, to_phone, yes
-)
-from etl.tagging import channel_partners, contact_partners, exam_partners, lead_partners
+from etl.normalize import clean, norm_province, norm_school, region_of, to_date_str, to_dt, to_phone
+from etl.tagging import contact_partners, lead_partners
 
 # Cấu hình ngưỡng thi COS Pro
 PARAMS = {
@@ -65,7 +60,7 @@ def grade_of(score: float | None) -> str | None:
 def process_scores(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Tính toán và sửa tất cả các cột #REF! trong bảng điểm 119 thí sinh."""
     df = df.copy()
-    
+
     # 1. Ép kiểu các cột điểm
     num_cols = [
         "VL – Đọc hiểu code", "VL – Design (thiết kế · viết hàm)", "VL – Debugging",
@@ -74,26 +69,26 @@ def process_scores(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     for c in num_cols:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce")
-            
+
     # Tính VL – Tổng
     vl_sum = df[["VL – Đọc hiểu code", "VL – Design (thiết kế · viết hàm)", "VL – Debugging"]].fillna(0).sum(axis=1)
     df["VL – Tổng (/1000)"] = vl_sum
-    
+
     # Tính CK – Tổng
     has_ck = df["CK – Đọc hiểu code"].notna() | df["CK – Design"].notna() | df["CK – Debugging"].notna()
     ck_sum = df[["CK – Đọc hiểu code", "CK – Design", "CK – Debugging"]].fillna(0).sum(axis=1)
     df["CK – Tổng (/1000)"] = np.where(has_ck, ck_sum, np.nan)
-    
+
     # 2. Xếp hạng Vòng loại trong từng Bảng
     df["VL – Hạng trong bảng"] = 0
     df["Vượt vòng loại (Top 10%)"] = "Không"
-    
+
     for board in ["Bảng A", "Bảng B"]:
         mask = df["Bảng"] == board
         sub = df[mask]
         ranks = sub["VL – Tổng (/1000)"].rank(ascending=False, method="min").astype(int)
         df.loc[mask, "VL – Hạng trong bảng"] = ranks
-        
+
         # Top 10%
         n_top = math.ceil(len(sub) * 0.10)
         df.loc[mask & (df["VL – Hạng trong bảng"] <= n_top), "Vượt vòng loại (Top 10%)"] = "Có"
@@ -110,11 +105,11 @@ def process_scores(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     # 4. Xếp loại VL & CK
     df["VL – Xếp loại"] = df["VL – Tổng (/1000)"].apply(grade_of)
     df["CK – Xếp loại"] = df["CK – Tổng (/1000)"].apply(grade_of)
-    
+
     # 5. Chứng chỉ COS Pro (>= 600 ở VL hoặc CK)
     max_score = df[["VL – Tổng (/1000)", "CK – Tổng (/1000)"]].max(axis=1)
     df["Chứng chỉ COS Pro (≥600)"] = np.where(max_score >= 600, "Có", "Không")
-    
+
     # 6. STT đạt chứng chỉ
     cert_stt = 1
     stt_list = []
@@ -130,12 +125,12 @@ def process_scores(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     # 7. Tạo sheet Chi_tiet_diem (372 dòng)
     details = []
     max_dict = {(s["board"], s["round"], s["section"]): (s["max_score"], s["level"]) for s in STRUCTURE}
-    
+
     for _, row in df.iterrows():
         email = row["Email"]
         name = row["Họ tên"]
         board = row["Bảng"]
-        
+
         # Vòng loại
         vl_sec = [
             ("reading", "Đọc hiểu code", row.get("VL – Đọc hiểu code")),
@@ -152,7 +147,7 @@ def process_scores(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
                     "% điểm": round(float(sc) / float(mx), 2),
                     "Dữ liệu giả lập": "Có"
                 })
-                
+
         # Chung kết
         if pd.notna(row.get("CK – Tổng (/1000)")):
             ck_sec = [
@@ -170,7 +165,7 @@ def process_scores(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
                         "% điểm": round(float(sc) / float(mx), 2),
                         "Dữ liệu giả lập": "Có"
                     })
-                    
+
     df_details = pd.DataFrame(details)
     return df, df_details
 
@@ -206,23 +201,52 @@ def find_demo_file() -> Path:
     raise FileNotFoundError("Không tìm thấy file Demo_Data_khách_hàng.xlsx!")
 
 
+def _seed_default_partners_and_users(db):
+    print("-> Đang đồng bộ danh mục Đối tác & Tài khoản mặc định...")
+    now_ts = datetime.now(timezone.utc)
+    for p in PARTNERS:
+        db.partners.update_one(
+            {"_id": p["code"]},
+            {
+                "$setOnInsert": {
+                    **{key: value for key, value in p.items() if key != "code"},
+                    "can_view_pii": False, "active": True, "created_at": now_ts,
+                },
+            },
+            upsert=True,
+        )
+    db.users.create_index("username", unique=True)
+    for u in DEFAULT_USERS:
+        password = settings.seed_admin_password if u["role"] == "admin" else settings.seed_partner_password
+        if db.users.count_documents({"username": u["username"]}) == 0:
+            db.users.insert_one({
+                **u,
+                "password_hash": hash_password(password),
+                "active": True,
+                "token_version": 0,
+                "created_at": now_ts,
+                "last_login": None,
+            })
+            print(f"  + Tạo tài khoản {u['username']} ({u['partner_code'] or 'admin'})")
+
+
 def run():
     print("=== BẮT ĐẦU XỬ LÝ DỮ LIỆU & NẠP VÀO MONGODB ===")
-    
+
     score_file, score_sheet = find_score_file()
     demo_file = find_demo_file()
     print(f"-> Sử dụng file điểm gốc: {score_file.name} (sheet: '{score_sheet}')")
     print(f"-> Sử dụng file đăng ký: {demo_file.name}")
-    
+
     df_score_raw = pd.read_excel(score_file, sheet_name=score_sheet)
     df_reg = pd.read_excel(demo_file, sheet_name="Data đăng ký pythonmaster.vn")
     df_talkshow = pd.read_excel(demo_file, sheet_name="Data tham gia webinar từ Google")
     df_fb = pd.read_excel(demo_file, sheet_name="Data tham gia từ Facebook Ads")
-    
+
     # 1. Tính toán điểm chuẩn
-    print(f"-> Đang tính toán và làm sạch điểm thi 119 thí sinh...")
+    print("-> Đang tính toán và làm sạch điểm thi 119 thí sinh...")
     df_score_clean, df_details = process_scores(df_score_raw)
-    
+
     # Lưu lại file Excel chuẩn
     with pd.ExcelWriter(score_file, engine="openpyxl") as writer:
         df_score_clean.to_excel(writer, sheet_name="Tong_hop", index=False)
@@ -248,15 +272,16 @@ def run():
     signups = []
     candidates = []
     scores = []
-    
-    now = datetime.now(timezone.utc)
-    
+
     for idx, r in df_reg.iterrows():
         stt = idx + 1
         cid = f"PT-{stt:03d}"
         score_row = df_score_clean[df_score_clean["Email"] == r["pm-email"]].iloc[0]
-        
-        is_paid = r["payment_status"] == "completed"
+
+        raw_payment = str(clean(r.get("payment_status")) or "").casefold()
+        is_paid = raw_payment in ("completed", "đã thanh toán")
+        is_free = raw_payment in ("free", "miễn phí", "miễn phí (free)")
+        payment_status = "Đã thanh toán" if is_paid else "Miễn phí" if is_free else "Chưa thanh toán"
         province = norm_province(r.get("pm-tinhthanh"))
         board = r.get("pm-bang")
         school = r.get("pm-truong")
@@ -264,7 +289,7 @@ def run():
         email = r.get("pm-email")
         name = r.get("pm-hoten")
         partner_tag = clean(r.get("partner"))
-        
+
         # Tags đối tác (Hỗ trợ mở rộng theo đối tác cụ thể và nhóm)
         p_tags = []
         school_lower = str(school or "").lower()
@@ -282,9 +307,10 @@ def run():
         if province in ["TP. Hồ Chí Minh", "Bình Dương", "Đồng Nai", "Cần Thơ", "Lâm Đồng", "Khánh Hòa"]:
             p_tags.append("MIENNAM")
         p_tags = sorted(list(set(p_tags)))
-        
-        reg_dt = to_dt(r.get("date")) or datetime(2026, 8, 1, tzinfo=timezone.utc)
-        
+
+        registration_date = to_dt(r.get("date"))
+        reg_dt = registration_date or datetime(2026, 8, 1, tzinfo=timezone.utc)
+
         contact_doc = {
             "_id": cid,
             "contact_id": cid,
@@ -298,11 +324,11 @@ def run():
             "school_type": school_info["school_type"],
             "school_id": school_info["school_id"],
             "web_registered": True,
-            "payment_status": "Đã thanh toán" if is_paid else "Chưa thanh toán",
+            "payment_status": payment_status,
             "paid": is_paid,
             "is_paid_monetary": is_paid,
-            "is_registered_valid": is_paid,
-            "fee": 500000.0,
+            "is_registered_valid": is_paid or is_free,
+            "fee": 0.0 if is_free else 500000.0,
             "revenue": 500000.0 if is_paid else 0.0,
             "has_external": False,
             "talkshow_form": False,
@@ -316,8 +342,9 @@ def run():
             "source_combo": "Website",
             "first_touch": reg_dt,
             "web_registered_at": reg_dt,
-            "segment": "Đã thanh toán" if is_paid else "Chưa thanh toán",
-            "segment_name": "Nhóm hoàn tất" if is_paid else "Nhóm tiềm năng",
+            "report_date_assumed": registration_date is None,
+            "segment": payment_status,
+            "segment_name": "Nhóm hoàn tất" if is_paid or is_free else "Nhóm tiềm năng",
             "sub_segment": board,
             "drip": "Drip-1",
             "flags": [],
@@ -335,7 +362,7 @@ def run():
             "partners": p_tags
         }
         contacts.append(contact_doc)
-        
+
         signups.append({
             "row_no": stt + 1,
             "contact_id": cid,
@@ -355,20 +382,20 @@ def run():
             "school_raw": school,
             "dob": to_date_str(r.get("pm-ngaysinh")),
             "cccd": clean(r.get("pm-cccd")),
-            "fee": 500000.0,
-            "payment_status": "completed" if is_paid else "pending",
+            "fee": 0.0 if is_free else 500000.0,
+            "payment_status": "completed" if is_paid else "free" if is_free else "pending",
             "utm_partner": partner_tag,
             "promo_code": None,
             "pic": "Ban Tuyển Sinh",
             "note": clean(r.get("ghi chu")),
             "partners": p_tags
         })
-        
+
         # Exam Candidate Doc
         cand_id = f"PM119:{stt:03d}"
         vl_total = float(score_row["VL – Tổng (/1000)"])
         ck_total = float(score_row["CK – Tổng (/1000)"]) if pd.notna(score_row["CK – Tổng (/1000)"]) else None
-        
+
         cand_school_info = norm_school(school)
         cand_doc = {
             "_id": cand_id,
@@ -385,7 +412,7 @@ def run():
             "region": region_of(province),
             "paid": is_paid,
             "is_paid_monetary": is_paid,
-            "is_registered_valid": is_paid,
+            "is_registered_valid": is_paid or is_free,
             "simulated": True,
             "qualifier": {
                 "level": score_row.get("VL – Cấp COS Pro"),
@@ -458,15 +485,16 @@ def run():
         heard_from = clean(r.get("5. Bạn biết về Talkshow qua đâu?"))
         self_dec_raw = str(r.get("6. Bạn đã ghi danh đấu trường Python Master 2026 chưa?") or "")
         self_declared = "Chưa đăng ký" if "chưa" in self_dec_raw.lower() else ("Đã đăng ký" if any(kw in self_dec_raw.lower() for kw in ("rồi", "đã", "có")) else "Chưa đăng ký")
-        
+
         b_raw = str(r.get("7. Bạn đang quan tâm đến bảng đấu nào?") or "").lower()
         board_interest = "Bảng A" if "bảng a" in b_raw else ("Bảng B" if "bảng b" in b_raw else "Bảng B")
-        
+
         school_raw = clean(r.get("4. Trường đang theo học"))
         school_info = norm_school(school_raw)
         question = clean(r.get("8. Câu hỏi dành cho BTC"))
         pic = clean(r.get("Link form: https://docs.google.com/forms/d/1GxVr7rGHSKuXOLFNQ4C1ICwapRT7TS8L1P6b-wNtRUk/edit")) or "Nhung"
-        created_at = to_dt(r.get("Timestamp")) or datetime(2026, 8, 26, 19, 0, tzinfo=timezone.utc)
+        source_date = to_dt(r.get("Timestamp"))
+        created_at = source_date or datetime(2026, 8, 26, 19, 0, tzinfo=timezone.utc)
         province = school_info.get("province") or "Hà Nội"
         region = school_info.get("region") or "Miền Bắc"
 
@@ -551,6 +579,7 @@ def run():
             "result": result,
             "segment": "Nhóm hoàn tất" if matched and matched.get("paid") else "Nhóm tiềm năng",
             "created_at": created_at,
+            "report_date_assumed": source_date is None,
             "full_name": name,
             "full_name_raw": name,
             "email": email,
@@ -587,18 +616,19 @@ def run():
         adset_name = clean(r.get("adset_name"))
         platform_raw = clean(r.get("platform"))
         platform = "Facebook" if platform_raw == "fb" else ("Instagram" if platform_raw == "ig" else "Facebook")
-        
+
         b_raw = str(r.get("bạn_đang_cần_thông_tin_cho_bảng_thi_nào?") or "").lower()
         board_interest = "Bảng A" if "bảng_a" in b_raw else ("Bảng B" if "bảng_b" in b_raw else "Bảng B")
-        
+
         wt_raw = str(r.get("bạn_có_muốn_tham_gia_các_talkshow_hàng_tuần_để_hiểu_thêm_chương_trình?") or "").lower()
         wants_talkshow = "không" not in wt_raw
-        
+
         province = norm_province(clean(r.get("bạn_đang_ở_khu_vực_nào?"))) or "TP. Hồ Chí Minh"
         region = region_of(province)
         pic = clean(r.get("col20")) or "Thắng"
         note = clean(r.get("col22"))
-        created_at = to_dt(r.get("created_time")) or datetime(2026, 8, 15, 12, 0, tzinfo=timezone.utc)
+        source_date = to_dt(r.get("created_time"))
+        created_at = source_date or datetime(2026, 8, 15, 12, 0, tzinfo=timezone.utc)
 
         matched = (contact_by_email.get(email_lower) if email_lower else None) or (contact_by_phone.get(phone) if phone else None)
         if matched:
@@ -679,6 +709,7 @@ def run():
             "result": result,
             "segment": "Nhóm hoàn tất" if matched and matched.get("paid") else "Nhóm tiềm năng",
             "created_at": created_at,
+            "report_date_assumed": source_date is None,
             "full_name": name,
             "full_name_raw": name,
             "email": email,
@@ -718,7 +749,7 @@ def run():
     # 5. Raw signups, talkshow, fb leads
     raw_signups = [dict(r) for _, r in df_reg.iterrows()]
     db.raw_web_signups.insert_many(raw_signups)
-    
+
     if not df_talkshow.empty:
         db.raw_talkshow.insert_many([dict(r) for _, r in df_talkshow.iterrows()])
     if not df_fb.empty:
@@ -761,31 +792,7 @@ def run():
     ]
     db.sponsor_benefits.insert_many(benefits)
 
-    # 8. Đồng bộ Danh mục Đối tác & Tài khoản mặc định
-    print("-> Đang đồng bộ danh mục Đối tác & Tài khoản mặc định...")
-    now_ts = datetime.now(timezone.utc)
-    for p in PARTNERS:
-        db.partners.update_one(
-            {"_id": p["code"]},
-            {
-                "$set": {k: p[k] for k in ("name", "type", "description", "scope_rule")},
-                "$setOnInsert": {"modules": p["modules"], "can_view_pii": False, "active": True, "created_at": now_ts},
-            },
-            upsert=True,
-        )
-    db.users.create_index("username", unique=True)
-    for u in DEFAULT_USERS:
-        password = settings.seed_admin_password if u["role"] == "admin" else settings.seed_partner_password
-        if db.users.count_documents({"username": u["username"]}) == 0:
-            db.users.insert_one({
-                **u,
-                "password_hash": hash_password(password),
-                "active": True,
-                "token_version": 0,
-                "created_at": now_ts,
-                "last_login": None,
-            })
-            print(f"  + Tạo tài khoản {u['username']} ({u['partner_code'] or 'admin'})")
+    _seed_default_partners_and_users(db)
 
     print("\n=== HOÀN TẤT NẠP DỮ LIỆU THÀNH CÔNG VÀO MONGODB! ===")
     print(f"- Contacts: {len(contacts)}")

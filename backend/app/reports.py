@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 
@@ -76,11 +76,12 @@ def report_sections(data: dict, user: CurrentUser, f: ContactFilters) -> list[tu
             ["Chỉ số", "Giá trị"],
             ["Liên hệ duy nhất", _n(k.get("total"))],
             ["Đăng ký trên website", _n(k.get("web_registered"))],
-            ["Đã thanh toán", _n(k.get("paid"))],
+            ["Đã đóng phí", _n(k.get("paid"))],
+            ["Miễn phí", _n(k.get("free"))],
             ["Tỉ lệ thanh toán / đăng ký", _pct(k.get("paid_rate"))],
             ["Doanh thu lệ phí ghi nhận", _vnd(k.get("revenue"))],
-            ["Doanh thu tiềm năng", _vnd(k.get("potential_revenue"))],
-            ["Chưa thanh toán (đã đăng ký)", _n(k.get("unpaid_registered"))],
+            ["Tổng lệ phí của nhóm chưa ghi nhận đóng phí", _vnd(k.get("potential_revenue"))],
+            ["Hồ sơ đăng ký chưa ghi nhận đóng phí (có thể gồm miễn phí)", _n(k.get("unpaid_registered"))],
         ]))
         sections.append(("Phễu tuyển sinh", [["Giai đoạn", "Số lượng"]] + [[r["stage"], _n(r["value"])] for r in crm.get("funnel", [])]))
         if crm.get("by_segment"):
@@ -164,7 +165,7 @@ def _safe_sheet(name: str) -> str:
     return cleaned or "Sheet"
 
 
-def build_xlsx(sections: list[tuple[str, list[list[str]]]]) -> bytes:
+def build_xlsx(sections: list[tuple[str, list[list[str | int | float]]]]) -> bytes:
     wb = Workbook()
     header_fill = PatternFill("solid", fgColor="1C5CAB")
     header_font = Font(color="FFFFFF", bold=True)
@@ -186,6 +187,8 @@ def build_xlsx(sections: list[tuple[str, list[list[str]]]]) -> bytes:
         for r_i, row in enumerate(rows, start=3):
             for c_i, val in enumerate(row, start=1):
                 cell = ws.cell(r_i, c_i, val)
+                if isinstance(val, str) and cell.data_type == "f":
+                    cell.data_type = "s"
                 cell.border = thin
                 cell.alignment = Alignment(vertical="center", wrap_text=True)
                 if r_i == 3:
@@ -211,7 +214,7 @@ def build_xlsx(sections: list[tuple[str, list[list[str]]]]) -> bytes:
     return buf.getvalue()
 
 
-def build_docx(sections: list[tuple[str, list[list[str]]]]) -> bytes:
+def build_docx(sections: list[tuple[str, list[list[str | int | float]]]], *, heading: str = "Báo cáo tổng quan tuyển sinh") -> bytes:
     from docx import Document
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.oxml import OxmlElement
@@ -231,7 +234,7 @@ def build_docx(sections: list[tuple[str, list[list[str]]]]) -> bytes:
         run.font.name = name
         run._element.rPr.rFonts.set(qn("w:eastAsia"), name)
 
-    h = doc.add_heading("Báo cáo tổng quan tuyển sinh", level=0)
+    h = doc.add_heading(heading, level=0)
     for run in h.runs:
         run.font.color.rgb = RGBColor(0x1C, 0x5C, 0xAB)
         _set_run_font(run)
@@ -256,7 +259,7 @@ def build_docx(sections: list[tuple[str, list[list[str]]]]) -> bytes:
         for r_i, row in enumerate(rows):
             for c_i in range(cols):
                 cell = table.cell(r_i, c_i)
-                cell.text = row[c_i] if c_i < len(row) else ""
+                cell.text = str(row[c_i]) if c_i < len(row) else ""
                 for p in cell.paragraphs:
                     p.paragraph_format.space_after = Pt(0)
                     p.paragraph_format.space_before = Pt(0)
@@ -292,7 +295,7 @@ def _pdf_font() -> tuple[str, str | None]:
     return "Helvetica", None
 
 
-def build_pdf(sections: list[tuple[str, list[list[str]]]]) -> bytes:
+def build_pdf(sections: list[tuple[str, list[list[str | int | float]]]], *, heading: str = "Báo cáo tổng quan tuyển sinh — Python Master · PTIT") -> bytes:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -333,7 +336,7 @@ def build_pdf(sections: list[tuple[str, list[list[str]]]]) -> bytes:
     cell_head = ParagraphStyle("VNHead", fontName=bold_name, fontSize=8, leading=11, textColor=colors.white)
 
     story = [
-        Paragraph("Báo cáo tổng quan tuyển sinh — Python Master · PTIT", title_style),
+        Paragraph(heading, title_style),
         Paragraph("NEU Admissions BI", ParagraphStyle("sub", fontName=font, fontSize=9, textColor=colors.HexColor("#52514E"), spaceAfter=8)),
     ]
     navy = colors.HexColor("#1C5CAB")
@@ -386,12 +389,7 @@ _MIME = {
 }
 
 
-def report_response(kind: str, data: dict, user: CurrentUser, f: ContactFilters) -> StreamingResponse:
-    sections = report_sections(data, user, f)
-    builders = {"xlsx": build_xlsx, "docx": build_docx, "pdf": build_pdf}
-    payload = builders[kind](sections)
-    stamp = datetime.now().strftime("%Y%m%d_%H%M")
-    filename = f"bao_cao_tong_quan_{stamp}.{kind}"
+def _report_attachment(kind: str, filename: str, payload: bytes) -> StreamingResponse:
     return StreamingResponse(
         BytesIO(payload),
         media_type=_MIME[kind],
@@ -400,3 +398,48 @@ def report_response(kind: str, data: dict, user: CurrentUser, f: ContactFilters)
             "Cache-Control": "no-store",
         },
     )
+
+
+def report_response(kind: str, data: dict, user: CurrentUser, f: ContactFilters) -> StreamingResponse:
+    sections = report_sections(data, user, f)
+    builders = {"xlsx": build_xlsx, "docx": build_docx, "pdf": build_pdf}
+    payload = builders[kind](sections)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M")
+    filename = f"bao_cao_tong_quan_{stamp}.{kind}"
+    return _report_attachment(kind, filename, payload)
+
+
+def _closed_report_sections(sections: list, generated_at: datetime) -> list:
+    # MongoDB có thể trả datetime không kèm múi giờ dù thời điểm được lưu theo UTC.
+    utc_time = generated_at.astimezone(timezone.utc) if generated_at.tzinfo else generated_at.replace(tzinfo=timezone.utc)
+    timestamp = utc_time.isoformat(timespec="seconds")
+    return [("Thông tin báo cáo", [*sections[0][1], ["Thời điểm chốt (UTC)", timestamp]]), *sections[1:]]
+
+
+_PERIOD_HEADINGS = {
+    "month": "Báo cáo tuyển sinh theo tháng",
+    "quarter": "Báo cáo tuyển sinh theo quý",
+    "range": "Báo cáo tuyển sinh theo giai đoạn",
+    "stage": "Báo cáo tuyển sinh theo giai đoạn",
+}
+
+
+def monthly_report_files(sections: list, generated_at: datetime, kind: str = "month") -> dict[str, bytes]:
+    report = _closed_report_sections(sections, generated_at)
+    heading = _PERIOD_HEADINGS[kind]
+    return {
+        "xlsx": build_xlsx(report),
+        "pdf": build_pdf(report, heading=heading),
+        "docx": build_docx(report, heading=heading),
+    }
+
+
+def monthly_report_download(doc: dict, kind: str) -> StreamingResponse:
+    key = doc.get("period_key") or doc["month"]
+    filename = f"bao-cao-{doc['partner']}-{key}-{doc['_id'][:10]}.{kind}"
+    data = doc["files"].get(kind)
+    # Older snapshots stored two formats. Render Word from the frozen sections.
+    if data is None and kind == "docx":
+        data = build_docx(_closed_report_sections(doc["sections"], doc["generated_at"]),
+                          heading=_PERIOD_HEADINGS[doc.get("kind", "month")])
+    return _report_attachment(kind, filename, data)

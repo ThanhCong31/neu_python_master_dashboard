@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, Query
 
 from ..db import get_db
 from ..filters import apply_pii, effective_partner, scope_match
-from ..partners import PARTNERS
 from ..security import CurrentUser, get_current_user, require_module
 
 router = APIRouter(prefix="/api", tags=["misc"])
@@ -33,12 +32,12 @@ def quality_summary(partner: str | None = None, user: CurrentUser = Depends(requ
         {"$group": {"_id": "$merged_count", "count": {"$sum": 1}}}, {"$sort": {"_id": 1}},
     ]))
     return {
-        "pipeline": db.meta.find_one({"_id": "pipeline"}, {"_id": 0}),
+        "pipeline": db.meta.find_one({"_id": "pipeline"}, {"_id": 0}) if user.is_admin else None,
         "by_issue": [{**r["_id"], "count": r["count"]} for r in by_issue],
         "by_reason": [{**r["_id"], "count": r["count"]} for r in by_reason],
         "flags": [{"key": r["_id"], "count": r["count"]} for r in flags],
         "merged_distribution": [{"merged": r["_id"], "count": r["count"]} for r in merged],
-        "last_import": db.import_runs.find_one({}, {"_id": 0, "files": 1, "finished_at": 1, "ok": 1, "checks": 1}, sort=[("started_at", -1)]),
+        "last_import": db.import_runs.find_one({}, {"_id": 0, "files": 1, "finished_at": 1, "ok": 1, "checks": 1}, sort=[("started_at", -1)]) if user.is_admin else None,
     }
 
 
@@ -93,9 +92,12 @@ def _distinct(coll, field: str, match: dict) -> list:
 def options(partner: str | None = None, dataset: str = "PM119", user: CurrentUser = Depends(get_current_user)):
     """Giá trị cho các bộ lọc — chỉ lấy trong phạm vi dữ liệu người dùng được xem."""
     db = get_db()
-    match = scope_match(user, partner)
+    match = scope_match(user, partner, "contacts")
     out: dict = {
-        "partners": [{"code": p["code"], "name": p["name"], "type": p["type"]} for p in PARTNERS] if user.is_admin else [],
+        "partners": [
+            {"code": p["_id"], "name": p["name"], "type": p["type"]}
+            for p in db.partners.find({"active": {"$ne": False}}, {"name": 1, "type": 1}).sort("name", 1)
+        ] if user.is_admin else [],
         "viewing_partner": effective_partner(user, partner),
     }
     if {"contacts", "marketing", "overview"} & set(user.modules):
@@ -120,16 +122,18 @@ def options(partner: str | None = None, dataset: str = "PM119", user: CurrentUse
             "date_max": bounds[0]["max"] if bounds else None,
         }
     if "leads" in user.modules:
+        lead_match = scope_match(user, partner, "leads")
         out["leads"] = {
-            k: _distinct("leads", f, match)
+            k: _distinct("leads", f, lead_match)
             for k, f in (("source", "source"), ("result", "result"), ("campaign", "campaign"), ("platform", "platform"),
                          ("segment", "segment"), ("region", "region"), ("board", "board_interest"), ("pic", "pic"))
         }
     if "exams" in user.modules:
-        exam_match = {**match, "dataset": dataset}
+        candidate_match = scope_match(user, partner, "exam_candidates")
+        exam_match = {**candidate_match, "dataset": dataset}
         meta = db.meta.find_one({"_id": "exam"}) or {"datasets": []}
         out["exams"] = {
-            "datasets": [d for d in meta["datasets"] if db.exam_candidates.count_documents({**match, "dataset": d["code"]}, limit=1)],
+            "datasets": [d for d in meta["datasets"] if db.exam_candidates.count_documents({**candidate_match, "dataset": d["code"]}, limit=1)],
             **{k: _distinct("exam_candidates", f, exam_match)
                for k, f in (("board", "board"), ("region", "region"), ("province", "province"),
                             ("school_type", "school_type"), ("school", "school"))},

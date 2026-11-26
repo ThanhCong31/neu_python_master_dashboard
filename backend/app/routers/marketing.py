@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from ..db import get_db
-from ..filters import ContactFilters, effective_partner
+from ..filters import ContactFilters, effective_partner, scope_match
 from ..security import CurrentUser, require_module
 
 router = APIRouter(prefix="/api/marketing", tags=["marketing"])
@@ -31,7 +31,7 @@ def marketing_summary(f: ContactFilters, user: CurrentUser) -> dict:
     }
     # Ngân sách là dữ liệu cấp kênh: đối tác chỉ thấy ngân sách kênh mình sở hữu
     partner = effective_partner(user, f.partner)
-    budget_match = {"partners": partner} if partner else {}
+    budget_match = scope_match(user, f.partner, "channel_budgets")
     budgets = {b["channel"]: b for b in db.channel_budgets.find(budget_match, {"_id": 0})}
     order = {b["channel"]: b["order"] for b in db.channel_budgets.find({}, {"channel": 1, "order": 1})}
 
