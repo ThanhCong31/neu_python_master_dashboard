@@ -139,7 +139,7 @@ function Reconciliation({
       axisLabel: { color: p.muted, width: groupLabelWidth(l), overflow: 'truncate' },
       axisTick: { show: false },
     },
-    series: results.map((r, i) => ({
+    series: results.map((r) => ({
       name: r === null ? 'Chưa có kết quả (null)' : r === '' ? 'Kết quả rỗng' : resultLabel(r),
       type: 'bar',
       stack: 'result',

@@ -8,7 +8,15 @@ import {PageRefresh} from '@/shared/PageActions';
 import {WorkspaceSelect} from '@/shared/WorkspaceSelect';
 import {useWorkspace} from '@/app/workspace';
 import {useResource} from '@/services/useResource';
-import {scopedOptions,warning,type Dataset,type ExamOptions,type OptionsResponse,type Filters,type ExamList,type Summary} from './exams/model';
+import {
+  scopedOptions,
+  warning,
+  type Dataset,
+  type OptionsResponse,
+  type Filters,
+  type ExamList,
+  type Summary,
+} from './exams/model';
 import {parseFilters,writeFilters,selectDataset,resolveDataset,makePath,filterError,searchValue} from './exams/query';
 import {FilterBar,FilterDialog} from './exams/components/Filters';
 import {Records,type Controls} from './exams/components/Records';

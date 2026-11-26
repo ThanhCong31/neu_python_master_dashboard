@@ -19,6 +19,7 @@ export interface User {
   partner_name: string | null;
   modules: ModuleId[];
   can_view_pii: boolean;
+  can_export_reports?: boolean;
 }
 
 export interface Destination {

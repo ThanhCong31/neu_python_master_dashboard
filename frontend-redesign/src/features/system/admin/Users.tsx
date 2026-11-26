@@ -17,7 +17,8 @@ function UserEditor({mode,partners,done,onClose,onBusyChange}:{mode:{type:"creat
   const [username,setUsername]=useState("");
   const [name,setName]=useState(original?.full_name??"");
   const [role,setRole]=useState<"partner"|"admin">(original?.role??"partner");
-  const [partner,setPartner]=useState(original?.partner_code??partners.partners[0]?.code??"");
+  const partnerChoices = partners.partners.filter(item => item.active || item.code === original?.partner_code);
+  const [partner,setPartner]=useState(original?.partner_code??partnerChoices[0]?.code??"");
   const [password,setPassword]=useState("");
   const [busy,setBusy]=useState(false);
   useLayoutEffect(()=>{onBusyChange?.(busy);return()=>onBusyChange?.(false);},[busy,onBusyChange]);
@@ -62,14 +63,14 @@ function UserEditor({mode,partners,done,onClose,onBusyChange}:{mode:{type:"creat
       {!edit && <TextField label="Tên đăng nhập" value={username} onChange={e=>setUsername(e.target.value)} required minLength={3} maxLength={32} autoComplete="off"/>}
       <TextField label="Họ tên / đơn vị" value={name} onChange={e=>setName(e.target.value)} required minLength={1} maxLength={120}/>
       <SystemSelect native label="Vai trò" labelBackground="var(--ex-color-surface-container-high)" value={role} disabled={edit} options={[{value:"partner",label:"Đối tác"},{value:"admin",label:"Quản trị viên"}]} onChange={value=>setRole(value as "admin"|"partner")}/>
-      {role==="partner" && <SystemSelect native label="Đối tác" labelBackground="var(--ex-color-surface-container-high)" value={partner} options={partners.partners.map(p=>({value:p.code,label:`${p.code} · ${p.name}`}))} onChange={setPartner} />}
+      {role==="partner" && <SystemSelect native label="Đối tác" labelBackground="var(--ex-color-surface-container-high)" value={partner} options={partnerChoices.map(p=>({value:p.code,label:`${p.code} · ${p.name}`}))} onChange={setPartner} />}
       {!edit && <TextField label="Mật khẩu ban đầu" type="password" value={password} onChange={e=>setPassword(e.target.value)} minLength={8} maxLength={128} autoComplete="new-password" required supportingText="Tối thiểu 8 ký tự, kết hợp chữ và số hoặc ký tự đặc biệt."/>}
       {error && <Notice error>{error}</Notice>}
       <div className="sys-dialog-actions"><Button type="button" variant="text" disabled={busy} onClick={onClose}>Hủy</Button><Button type="submit" disabled={busy}>{busy?"Đang lưu…":edit?"Lưu thay đổi":"Tạo tài khoản"}</Button></div>
     </form>
   </Dialog>;
 }
-function PasswordReset({user,done,onClose,onBusyChange}:{user:AdminUser;done:(s:string)=>void;onClose:()=>void;onBusyChange?:(busy:boolean)=>void}){
+export function PasswordReset({user,done,onClose,onBusyChange}:{user:AdminUser;done:(s:string)=>void;onClose:()=>void;onBusyChange?:(busy:boolean)=>void}){
   const [password,setPassword]=useState("");const [confirm,setConfirm]=useState("");const [busy,setBusy]=useState(false);
   useLayoutEffect(()=>{onBusyChange?.(busy);return()=>onBusyChange?.(false);},[busy,onBusyChange]);
   const [error,setError]=useState("");

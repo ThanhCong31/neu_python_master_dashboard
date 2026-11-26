@@ -116,3 +116,22 @@
 @container overview (max-width:540px) {
   .ov-chart-panel {padding:16px;gap:12px;}
 }
+
+/* Report dialog uses the same surface and table colors as the overview. */
+.ov-report-dialog .dw-dialog-body {align-content:start;}
+.ov-report-content {display:grid;gap:12px;min-width:0;align-content:start;}
+.ov-report-content > p,.ov-report-stage > p {margin:0;}
+.ov-report-period {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.ov-report-stage {display:grid;gap:6px;}
+.ov-range-history {display:block;padding:12px 16px;}
+.ov-range-history summary {cursor:pointer;font-size:.875rem;}
+.ov-range-history[open] > p {margin-top:8px;}
+.ov-report-table-wrap {margin-top:12px;overflow-x:auto;border:1px solid var(--ex-color-outline-variant);border-radius:8px;}
+.ov-report-table {min-width:0;table-layout:fixed;}
+.ov-report-table :is(th,td) {white-space:normal;overflow-wrap:anywhere;vertical-align:top;}
+.ov-report-table tr > :first-child {width:56%;border-right:1px solid var(--ex-color-outline-variant);}
+.ov-report-table td[data-number="true"] {text-align:right;font-variant-numeric:tabular-nums;}
+.ov-report-table tbody tr:nth-child(even) {background:var(--ex-color-surface-container-low);}
+.ov-report-saved {border-color:var(--ex-color-primary);}
+.ov-report-history {display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;}
+@media(max-width:480px){.ov-report-period{grid-template-columns:minmax(0,1fr);}}

@@ -16,7 +16,10 @@ export interface Partner {
   scope_rule: string;
   modules: string[];
   can_view_pii: boolean;
+  can_export_reports: boolean;
+  data_scope?: {school_ids: string[]; contact_ids: string[]};
   active: boolean;
+  default_username?: string;
   users: number;
   records: Record<string, number>;
 }

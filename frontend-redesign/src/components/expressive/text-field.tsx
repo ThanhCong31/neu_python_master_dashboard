@@ -100,7 +100,8 @@ export function TextField({
           </Field.Label>}
           <Field.Control
             className={cn(
-              "w-full bg-transparent text-body-large text-on-surface caret-primary outline-none placeholder:text-on-surface-variant placeholder:opacity-0 focus:placeholder:opacity-100",
+              "w-full bg-transparent text-body-large text-on-surface caret-primary outline-none placeholder:text-on-surface-variant",
+              above ? "placeholder:opacity-100" : "placeholder:opacity-0 focus:placeholder:opacity-100",
               filled && !above && "pt-4",
               "group-data-invalid/field:caret-error",
             )}

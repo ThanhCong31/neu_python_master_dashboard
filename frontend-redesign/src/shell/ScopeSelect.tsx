@@ -5,7 +5,6 @@ import {
   MenuContent,
   MenuGroup,
   MenuGroupLabel,
-  MenuItem,
   MenuRadioGroup,
   MenuRadioItem,
   MenuSeparator,

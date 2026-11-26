@@ -5,7 +5,7 @@ import { TextField } from "@/components/expressive/text-field";
 import { RefreshButton } from "@/shared/PageActions";
 import { useResource } from "@/services/useResource";
 import type { AuditEvent } from "../types";
-import { Chip, DataTable, formatDate, Notice, Pager, Section, State } from "../components/Elements";
+import { Chip, DataTable, formatDate, Pager, Section, State } from "../components/Elements";
 const ACTIONS:Record<string,string>={login:"Đăng nhập",change_password:"Đổi mật khẩu",user_create:"Tạo tài khoản",user_update:"Sửa tài khoản",user_reset_password:"Đặt lại mật khẩu",partner_update:"Sửa quyền đối tác",data_reload:"Nạp lại dữ liệu",data_upload:"Tải lên file"};
 const PAGE=25;
 const DETAIL_LABELS: Record<string,string> = {

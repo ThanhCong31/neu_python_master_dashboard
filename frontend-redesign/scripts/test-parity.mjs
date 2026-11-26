@@ -25,10 +25,11 @@ assert.equal(registrationPattern([{dow:1,hour:0,count:Number.MAX_SAFE_INTEGER},{
 assert.equal(numberText(null),'—');assert.notEqual(numberText(0),'—');assert.equal(moneyText(null),'—');assert.equal(percentText(0),'0%');assert.equal(percentText(null),'—');
 // Source guards supplement, not replace, runtime UI tests.
 const upload=read('features/system/admin/Data.tsx');
-assert.ok(!upload.includes('MAX_BYTES'));
+assert.match(upload, /MAX_BYTES\s*=\s*25\s*\*\s*1024\s*\*\s*1024/);
 assert.ok(upload.includes('Diểm giả lập.xlsx'));
-assert.ok(upload.includes('file.size===0'));
-assert.ok(upload.includes('THAY THE'));
+assert.match(upload, /file\.size\s*===\s*0\s*\|\|\s*file\.size\s*>\s*MAX_BYTES/);
+assert.match(upload, /onClick=\{\(\)\s*=>\s*open\("upload"\)\}/);
+assert.match(upload, /<Dialog[\s\S]*onClick=\{execute\}/);
 const leads=read('features/admissions/leads/components/Analytics.tsx');
 assert.match(leads, /value\s*:\s*['"]by_question['"]/);
 assert.match(leads, /!canViewPii\s*&&\s*selection\s*===\s*['"]by_question['"]/);
