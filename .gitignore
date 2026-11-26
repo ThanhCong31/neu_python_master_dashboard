@@ -1,15 +1,22 @@
 .env
+.env.*
+!.env.example
 backend/.venv/
 __pycache__/
-frontend/node_modules/
-# frontend/dist/          
+node_modules/
+.idea/
+.DS_Store
+.pytest_cache/
 *.tsbuildinfo
 .playwright-mcp/
 
 # Dữ liệu nguồn (đã nạp vào MongoDB) - không đưa lên git
+/data/*.xlsx
+/data/*.xls
+/data/*.csv
+/Demo_Data_khách_hàng.xlsx
+/Diểm giả lập.xlsx
 Data-20260929T164510Z-1-001/
-Data-*.zip
 *.zip
 Data-20260930T063124Z-1-001/Data
 Data-*/
-Data-*.zip
